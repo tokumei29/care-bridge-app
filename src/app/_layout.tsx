@@ -53,6 +53,7 @@ function RootLayoutNav() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
           {/* ヘッダーは care/[recipientId]/_layout の Stack に一本化（二重「戻る」防止） */}
           <Stack.Screen name="care/[recipientId]" options={{ headerShown: false }} />

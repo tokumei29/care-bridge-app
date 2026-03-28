@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
+import { destroyMyAccount } from '@/api/account';
 import { createCareRecipientsApi } from '@/api/careRecipients';
 import { isApiError } from '@/api/errors';
 import type { CareRecipientRecord } from '@/api/types/careRecipient';
@@ -38,6 +39,10 @@ type CareRecipientsContextValue = {
   ) => Promise<{ ok: true } | { ok: false; reason: string }>;
   removeRecipient: (id: string) => Promise<void>;
   getRecipientById: (id: string) => CareRecipient | undefined;
+  /**
+   * アカウント削除: 可能なら `DELETE /api/v1/account`、404 時は被介護者をAPIで全削除後にサインアウト。
+   */
+  deleteMyAccountAndSignOut: () => Promise<{ ok: true } | { ok: false; reason: string }>;
 };
 
 const CareRecipientsContext = createContext<CareRecipientsContextValue | null>(null);
@@ -320,6 +325,42 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
     [api, refreshRecipients]
   );
 
+  const deleteMyAccountAndSignOut = useCallback(async (): Promise<
+    { ok: true } | { ok: false; reason: string }
+  > => {
+    if (!sessionRef.current) {
+      return { ok: false, reason: 'ログインが必要です。' };
+    }
+
+    try {
+      await destroyMyAccount({ getAccessToken });
+    } catch (e) {
+      if (isApiError(e) && e.status === 404) {
+        try {
+          const list = await api.list();
+          for (const row of list) {
+            const id = row.id != null ? String(row.id).trim() : '';
+            if (!id) continue;
+            await api.destroy(id);
+            await removeRecipientAvatarFromSupabase(id).catch(() => {});
+          }
+          setRecipients([]);
+        } catch (inner) {
+          return { ok: false, reason: errorReason(inner, 'データの削除に失敗しました。') };
+        }
+      } else {
+        return { ok: false, reason: errorReason(e, 'アカウントの削除に失敗しました。') };
+      }
+    }
+
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* サーバー側でセッション失効済みの場合など */
+    }
+    return { ok: true };
+  }, [api, getAccessToken]);
+
   const getRecipientById = useCallback(
     (id: string) => recipients.find((r) => r.id === id),
     [recipients]
@@ -339,9 +380,11 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
       updateRecipient,
       removeRecipient,
       getRecipientById,
+      deleteMyAccountAndSignOut,
     }),
     [
       addRecipient,
+      deleteMyAccountAndSignOut,
       getAccessToken,
       hydrateAuthSession,
       getRecipientById,
