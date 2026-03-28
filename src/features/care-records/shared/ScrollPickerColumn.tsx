@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import {
-  FlatList,
-  type ListRenderItem,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -22,17 +21,21 @@ type Props = {
   width?: number;
 };
 
+/**
+ * 時刻ホイール用の縦スクロール列。
+ * FlatList は親 ScrollView とネストすると警告・不具合の原因になるため ScrollView + 子 View で描画する（最大60要素程度）。
+ */
 export function ScrollPickerColumn({ data, selectedIndex, onChangeIndex, width = 56 }: Props) {
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
-  const listRef = useRef<FlatList<string>>(null);
+  const listRef = useRef<ScrollView>(null);
   const pad = ((VISIBLE - 1) * ITEM_H) / 2;
   const height = VISIBLE * ITEM_H;
 
   const scrollToIndex = useCallback(
     (index: number, animated: boolean) => {
       const clamped = Math.max(0, Math.min(data.length - 1, index));
-      listRef.current?.scrollToOffset({ offset: clamped * ITEM_H, animated });
+      listRef.current?.scrollTo({ y: clamped * ITEM_H, animated });
     },
     [data.length]
   );
@@ -53,24 +56,6 @@ export function ScrollPickerColumn({ data, selectedIndex, onChangeIndex, width =
     [data.length, onChangeIndex, scrollToIndex, selectedIndex]
   );
 
-  const renderItem: ListRenderItem<string> = useCallback(
-    ({ item, index }) => {
-      const active = index === selectedIndex;
-      return (
-        <View style={[styles.item, { height: ITEM_H, width }]}>
-          <Text
-            style={[
-              styles.itemText,
-              { color: active ? c.text : c.textSecondary, fontWeight: active ? '800' : '600' },
-            ]}>
-            {item}
-          </Text>
-        </View>
-      );
-    },
-    [c.text, c.textSecondary, selectedIndex, width]
-  );
-
   return (
     <View style={[styles.wrap, { width, height }]}>
       <View
@@ -85,24 +70,31 @@ export function ScrollPickerColumn({ data, selectedIndex, onChangeIndex, width =
           },
         ]}
       />
-      <FlatList
+      <ScrollView
         ref={listRef}
-        data={[...data]}
-        keyExtractor={(_, i) => `${i}`}
-        renderItem={renderItem}
-        style={styles.list}
+        nestedScrollEnabled
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_H}
         decelerationRate="fast"
         onMomentumScrollEnd={onMomentumEnd}
         scrollEventThrottle={16}
-        getItemLayout={(_, index) => ({
-          length: ITEM_H,
-          offset: ITEM_H * index,
-          index,
-        })}
         contentContainerStyle={{ paddingVertical: pad }}
-      />
+        style={styles.list}>
+        {data.map((item, index) => {
+          const active = index === selectedIndex;
+          return (
+            <View key={`${index}-${item}`} style={[styles.item, { height: ITEM_H, width }]}>
+              <Text
+                style={[
+                  styles.itemText,
+                  { color: active ? c.text : c.textSecondary, fontWeight: active ? '800' : '600' },
+                ]}>
+                {item}
+              </Text>
+            </View>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }

@@ -7,9 +7,10 @@ export default function CareRecipientStackLayout() {
         headerBackTitle: '戻る',
         headerTitleAlign: 'center',
       }}>
-      {/* 食事・排泄は内側の _layout だけヘッダー表示（ここで戻るを出すと二重になる） */}
+      {/* 食事・排泄・バイタルは内側の _layout だけヘッダー表示（ここで戻るを出すと二重になる） */}
       <Stack.Screen name="meals" options={{ headerShown: false }} />
       <Stack.Screen name="excretion" options={{ headerShown: false }} />
+      <Stack.Screen name="vitals" options={{ headerShown: false }} />
     </Stack>
   );
 }

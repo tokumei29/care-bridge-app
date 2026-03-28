@@ -9,6 +9,7 @@ export type CareRecordRouteSegment =
   | 'excretion'
   | 'excretion-new'
   | 'vitals'
+  | 'vitals-new'
   | 'bathing'
   | 'rehab'
   | 'sleep'
@@ -38,6 +39,7 @@ export const CARE_RECORD_PATHNAME: Record<CareRecordRouteSegment, string> = {
   excretion: '/care/[recipientId]/excretion',
   'excretion-new': '/care/[recipientId]/excretion/new',
   vitals: '/care/[recipientId]/vitals',
+  'vitals-new': '/care/[recipientId]/vitals/new',
   bathing: '/care/[recipientId]/bathing',
   rehab: '/care/[recipientId]/rehab',
   sleep: '/care/[recipientId]/sleep',
@@ -71,15 +73,15 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
       '排尿・排便の有無と量、便の状態、メモなどを入力して保存します。',
   },
   {
-    segment: 'vitals',
+    segment: 'vitals-new',
     menuSection: 'input',
-    title: 'バイタル',
-    subtitle: '体温・血圧などを入力する',
-    symbol: { ios: 'heart.text.square.fill', android: 'favorite', web: 'favorite' },
-    screenHeaderTitle: 'バイタル',
-    screenHeading: 'バイタルの記録',
+    title: 'バイタルの入力',
+    subtitle: '新しく記録を追加する',
+    symbol: { ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' },
+    screenHeaderTitle: '新しく記録',
+    screenHeading: 'バイタルの入力',
     screenDescription:
-      '体温・血圧・脈拍・SpO₂ などの測定値を時系列で入力・閲覧できるようにします。',
+      '体温・血圧（最高・最低）・脈拍・SpO₂・メモなどを入力して保存します。',
   },
   {
     segment: 'bathing',
@@ -154,6 +156,17 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
     screenHeading: '排泄の記録一覧',
     screenDescription:
       '過去の排泄記録を日付で絞り込んで一覧表示します。',
+  },
+  {
+    segment: 'vitals',
+    menuSection: 'list',
+    title: 'バイタルの記録',
+    subtitle: '一覧で見る。各行から編集・削除',
+    symbol: { ios: 'list.bullet.rectangle.fill', android: 'list', web: 'list' },
+    screenHeaderTitle: 'バイタルの記録',
+    screenHeading: 'バイタルの記録一覧',
+    screenDescription:
+      '過去のバイタル記録を日付で絞り込んで一覧表示します。',
   },
   {
     segment: 'pdf-export',
