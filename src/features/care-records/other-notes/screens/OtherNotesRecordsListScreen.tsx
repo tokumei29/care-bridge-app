@@ -23,6 +23,9 @@ import type { OtherNoteRecord } from '@/api/types/otherNote';
 import { useCareRecipients } from '@/features/care-recipients';
 import { PRE_SUBMIT_ISSUE_LABEL } from '@/features/care-records/meals/mealConstants';
 import {
+  careRecordListCardDateTextStyle,
+  careRecordListCardMemoTextStyle,
+  careRecordListCardSummaryTextStyle,
   formatRecordedAtDisplayJa,
   getJapanNowParts,
   isRecordedAtOnJapanDate,
@@ -31,18 +34,6 @@ import {
 import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
-
-function formatOtherNotePreview(item: OtherNoteRecord): string {
-  const obs = item.observation?.trim();
-  const memo = item.memo?.trim();
-  if (obs && memo) {
-    const combined = `${obs} ／ ${memo}`;
-    return combined.length > 56 ? `${combined.slice(0, 56)}…` : combined;
-  }
-  if (obs) return obs.length > 56 ? `${obs.slice(0, 56)}…` : obs;
-  if (memo) return memo.length > 56 ? `${memo.slice(0, 56)}…` : memo;
-  return '内容なし';
-}
 
 export function OtherNotesRecordsListScreen() {
   const { recipientId } = useLocalSearchParams<{ recipientId: string }>();
@@ -272,6 +263,9 @@ export function OtherNotesRecordsListScreen() {
               item.issue_status === 'issue'
                 ? PRE_SUBMIT_ISSUE_LABEL.issue
                 : PRE_SUBMIT_ISSUE_LABEL.ok;
+            const obs = item.observation?.trim();
+            const mem = item.memo?.trim();
+            const primary = obs || mem || '様子・その他の記載はありません';
             return (
               <ContentRail layout={layout}>
                 <View
@@ -283,12 +277,14 @@ export function OtherNotesRecordsListScreen() {
                     },
                   ]}>
                   <View style={styles.cardTop}>
-                    <Text style={[styles.cardDate, { color: c.text }]}>
+                    <Text style={[careRecordListCardDateTextStyle, { color: c.textSecondary }]}>
                       {formatRecordedAtDisplayJa(item.recorded_at)}
                     </Text>
                   </View>
-                  <Text style={[styles.cardSub, { color: c.textSecondary }]}>
-                    {formatOtherNotePreview(item)}
+                  <Text
+                    style={[careRecordListCardSummaryTextStyle(layout.isTablet), { color: c.text }]}
+                    numberOfLines={8}>
+                    {primary}
                   </Text>
                   <View style={styles.cardTags}>
                     <View
@@ -321,14 +317,11 @@ export function OtherNotesRecordsListScreen() {
                       </View>
                     </View>
                   </View>
-                  {item.observation ? (
-                    <Text style={[styles.cardMemo, { color: c.textSecondary }]} numberOfLines={2}>
-                      様子: {item.observation}
-                    </Text>
-                  ) : null}
-                  {item.memo ? (
-                    <Text style={[styles.cardMemo, { color: c.textSecondary }]} numberOfLines={2}>
-                      その他: {item.memo}
+                  {obs && mem ? (
+                    <Text
+                      style={[careRecordListCardMemoTextStyle(layout.isTablet), { color: c.textSecondary }]}
+                      numberOfLines={5}>
+                      その他の気づき: {mem}
                     </Text>
                   ) : null}
                   <View style={styles.cardActions}>
@@ -457,17 +450,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
-  cardDate: {
-    fontSize: 16,
-    fontWeight: '800',
-    flex: 1,
-  },
-  cardSub: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 8,
-    lineHeight: 18,
-  },
   cardTags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -489,11 +471,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     flexShrink: 1,
-  },
-  cardMemo: {
-    fontSize: 13,
-    marginTop: 10,
-    lineHeight: 18,
   },
   cardActions: {
     flexDirection: 'row',

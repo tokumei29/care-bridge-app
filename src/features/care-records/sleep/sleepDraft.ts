@@ -76,6 +76,20 @@ export function draftToSleepWritePayload(draft: SleepRecordDraft): SleepRecordWr
   };
 }
 
+/** 臥床〜起床の実時間（ISO）から「8時間30分」形式。不正・逆転時は null */
+export function formatSleepIntervalDurationJa(beddedAtIso: string, wokeAtIso: string): string | null {
+  const t0 = new Date(beddedAtIso).getTime();
+  const t1 = new Date(wokeAtIso).getTime();
+  if (Number.isNaN(t0) || Number.isNaN(t1) || t1 <= t0) return null;
+  const totalMin = Math.floor((t1 - t0) / 60000);
+  if (totalMin < 1) return '1分未満';
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return `${m}分`;
+  if (m === 0) return `${h}時間`;
+  return `${h}時間${m}分`;
+}
+
 export function validateSleepDraft(draft: SleepRecordDraft): string | null {
   try {
     const payload = draftToSleepWritePayload(draft);
@@ -100,12 +114,15 @@ export function buildSleepSummaryText(draft: SleepRecordDraft, recipientName: st
   const wm = String(draft.wakeMinute).padStart(2, '0');
   const wakeKey = wakeDateKeyForDraft(draft);
   const crossDay = wakeKey !== draft.dateKey;
+  const payload = draftToSleepWritePayload(draft);
+  const totalSleep = formatSleepIntervalDurationJa(payload.bedded_at, payload.woke_at);
   const lines = [
     `${recipientName}さん`,
     '',
     `臥床の日付（日本時間）: ${draft.dateKey}`,
     `臥床: ${bh}:${bm}`,
     `起床: ${wh}:${wm}${crossDay ? '（翌日）' : ''}`,
+    ...(totalSleep ? [`睡眠時間の合計: ${totalSleep}`] : []),
     `そのときの様子: ${PRE_SUBMIT_ISSUE_LABEL[draft.preSubmitIssue]}`,
     draft.memo.trim() ? `メモ: ${draft.memo.trim()}` : 'メモ: （なし）',
   ];

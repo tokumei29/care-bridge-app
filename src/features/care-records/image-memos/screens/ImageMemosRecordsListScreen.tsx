@@ -24,6 +24,8 @@ import { useCareRecipients } from '@/features/care-recipients';
 import { ImageMemoListThumb } from '@/features/care-records/image-memos/components/ImageMemoListThumb';
 import { PRE_SUBMIT_ISSUE_LABEL } from '@/features/care-records/meals/mealConstants';
 import {
+  careRecordListCardDateTextStyle,
+  careRecordListCardSummaryTextStyle,
   formatRecordedAtDisplayJa,
   getJapanNowParts,
   isRecordedAtOnJapanDate,
@@ -32,12 +34,6 @@ import {
 import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
-
-function formatMemoPreview(item: ImageMemoRecord): string {
-  const m = item.memo?.trim();
-  if (!m) return 'メモなし';
-  return m.length > 48 ? `${m.slice(0, 48)}…` : m;
-}
 
 export function ImageMemosRecordsListScreen() {
   const { recipientId } = useLocalSearchParams<{ recipientId: string }>();
@@ -50,7 +46,7 @@ export function ImageMemosRecordsListScreen() {
   useCareRecipientStackBackHeader(recipientId, c);
   const layout = useResponsiveLayout();
   const insets = useSafeAreaInsets();
-  const thumbSize = layout.isTablet ? 72 : 60;
+  const thumbSize = layout.isTablet ? 88 : 76;
 
   const [records, setRecords] = useState<ImageMemoRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -281,11 +277,13 @@ export function ImageMemosRecordsListScreen() {
                   <View style={styles.cardRow}>
                     <ImageMemoListThumb imageUrl={item.image_url} size={thumbSize} c={c} />
                     <View style={styles.cardMain}>
-                      <Text style={[styles.cardDate, { color: c.text }]}>
+                      <Text style={[careRecordListCardDateTextStyle, { color: c.textSecondary }]}>
                         {formatRecordedAtDisplayJa(item.recorded_at)}
                       </Text>
-                      <Text style={[styles.cardSub, { color: c.textSecondary }]}>
-                        {formatMemoPreview(item)}
+                      <Text
+                        style={[careRecordListCardSummaryTextStyle(layout.isTablet), { color: c.text }]}
+                        numberOfLines={5}>
+                        {item.memo?.trim() ? item.memo.trim() : 'メモなし'}
                       </Text>
                     </View>
                   </View>
@@ -448,16 +446,6 @@ const styles = StyleSheet.create({
   cardMain: {
     flex: 1,
     minWidth: 0,
-  },
-  cardDate: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  cardSub: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 8,
-    lineHeight: 18,
   },
   cardTags: {
     flexDirection: 'row',

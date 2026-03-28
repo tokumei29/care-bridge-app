@@ -1,4 +1,9 @@
 export {
+  careRecordListCardDateTextStyle,
+  careRecordListCardMemoTextStyle,
+  careRecordListCardSummaryTextStyle,
+} from './careRecordListCardStyles';
+export {
   CARE_RECORD_ACTIVITY_MAX_LENGTH,
   CARE_RECORD_MEMO_MAX_LENGTH,
   CARE_RECORD_OBSERVATION_MAX_LENGTH,

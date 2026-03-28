@@ -23,6 +23,8 @@ import type { BathingRecordRecord } from '@/api/types/bathingRecord';
 import { useCareRecipients } from '@/features/care-recipients';
 import { PRE_SUBMIT_ISSUE_LABEL } from '@/features/care-records/meals/mealConstants';
 import {
+  careRecordListCardDateTextStyle,
+  careRecordListCardSummaryTextStyle,
   formatRecordedAtDisplayJa,
   getJapanNowParts,
   isRecordedAtOnJapanDate,
@@ -31,12 +33,6 @@ import {
 import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
-
-function formatBathingMemoPreview(item: BathingRecordRecord): string {
-  const m = item.memo?.trim();
-  if (!m) return 'メモなし';
-  return m.length > 56 ? `${m.slice(0, 56)}…` : m;
-}
 
 export function BathingRecordsListScreen() {
   const { recipientId } = useLocalSearchParams<{ recipientId: string }>();
@@ -277,12 +273,14 @@ export function BathingRecordsListScreen() {
                     },
                   ]}>
                   <View style={styles.cardTop}>
-                    <Text style={[styles.cardDate, { color: c.text }]}>
+                    <Text style={[careRecordListCardDateTextStyle, { color: c.textSecondary }]}>
                       {formatRecordedAtDisplayJa(item.recorded_at)}
                     </Text>
                   </View>
-                  <Text style={[styles.cardSub, { color: c.textSecondary }]}>
-                    {formatBathingMemoPreview(item)}
+                  <Text
+                    style={[careRecordListCardSummaryTextStyle(layout.isTablet), { color: c.text }]}
+                    numberOfLines={8}>
+                    {item.memo?.trim() ? item.memo.trim() : '気づき・様子のメモはありません'}
                   </Text>
                   <View style={styles.cardTags}>
                     <View
@@ -315,11 +313,6 @@ export function BathingRecordsListScreen() {
                       </View>
                     </View>
                   </View>
-                  {item.memo ? (
-                    <Text style={[styles.cardMemo, { color: c.textSecondary }]} numberOfLines={2}>
-                      {item.memo}
-                    </Text>
-                  ) : null}
                   <View style={styles.cardActions}>
                     <Pressable
                       onPress={() => goEdit(item.id)}
@@ -446,17 +439,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
-  cardDate: {
-    fontSize: 16,
-    fontWeight: '800',
-    flex: 1,
-  },
-  cardSub: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 8,
-    lineHeight: 18,
-  },
   cardTags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -478,11 +460,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     flexShrink: 1,
-  },
-  cardMemo: {
-    fontSize: 13,
-    marginTop: 10,
-    lineHeight: 18,
   },
   cardActions: {
     flexDirection: 'row',

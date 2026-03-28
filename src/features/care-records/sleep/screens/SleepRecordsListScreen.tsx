@@ -23,12 +23,15 @@ import type { SleepRecordRecord } from '@/api/types/sleepRecord';
 import { useCareRecipients } from '@/features/care-recipients';
 import { PRE_SUBMIT_ISSUE_LABEL } from '@/features/care-records/meals/mealConstants';
 import {
+  careRecordListCardMemoTextStyle,
+  careRecordListCardSummaryTextStyle,
   getJapanNowParts,
   isRecordedAtOnJapanDate,
   MonthCalendar,
   pad2,
   parseIsoToJapanDateTimeParts,
 } from '@/features/care-records/shared';
+import { formatSleepIntervalDurationJa } from '@/features/care-records/sleep/sleepDraft';
 import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
@@ -285,6 +288,7 @@ export function SleepRecordsListScreen() {
               item.issue_status === 'issue'
                 ? PRE_SUBMIT_ISSUE_LABEL.issue
                 : PRE_SUBMIT_ISSUE_LABEL.ok;
+            const totalSleep = formatSleepIntervalDurationJa(item.bedded_at, item.woke_at);
             return (
               <ContentRail layout={layout}>
                 <View
@@ -295,12 +299,15 @@ export function SleepRecordsListScreen() {
                       backgroundColor: c.surfaceSolid,
                     },
                   ]}>
-                  <View style={styles.cardTop}>
-                    <Text style={[styles.cardDate, { color: c.text }]}>
-                      {formatSleepCardHeadline(item.bedded_at, item.woke_at)}
-                    </Text>
-                  </View>
-                  <Text style={[styles.cardSub, { color: c.textSecondary }]}>
+                  <Text
+                    style={[careRecordListCardSummaryTextStyle(layout.isTablet), { color: c.text }]}
+                    numberOfLines={6}>
+                    {formatSleepCardHeadline(item.bedded_at, item.woke_at)}
+                    {totalSleep ? `\n睡眠時間の合計 ${totalSleep}` : ''}
+                  </Text>
+                  <Text
+                    style={[careRecordListCardMemoTextStyle(layout.isTablet), { color: c.textSecondary }]}
+                    numberOfLines={3}>
                     {formatSleepMemoPreview(item)}
                   </Text>
                   <View style={styles.cardTags}>
@@ -453,23 +460,6 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: 16,
     marginBottom: 12,
-  },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  cardDate: {
-    fontSize: 16,
-    fontWeight: '800',
-    flex: 1,
-  },
-  cardSub: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 8,
-    lineHeight: 18,
   },
   cardTags: {
     flexDirection: 'row',

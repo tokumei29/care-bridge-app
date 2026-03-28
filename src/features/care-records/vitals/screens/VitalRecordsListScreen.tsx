@@ -23,6 +23,9 @@ import type { VitalRecordRecord } from '@/api/types/vitalRecord';
 import { useCareRecipients } from '@/features/care-recipients';
 import { PRE_SUBMIT_ISSUE_LABEL } from '@/features/care-records/meals/mealConstants';
 import {
+  careRecordListCardDateTextStyle,
+  careRecordListCardMemoTextStyle,
+  careRecordListCardSummaryTextStyle,
   formatRecordedAtDisplayJa,
   getJapanNowParts,
   isRecordedAtOnJapanDate,
@@ -290,11 +293,13 @@ export function VitalRecordsListScreen() {
                     },
                   ]}>
                   <View style={styles.cardTop}>
-                    <Text style={[styles.cardDate, { color: c.text }]}>
+                    <Text style={[careRecordListCardDateTextStyle, { color: c.textSecondary }]}>
                       {formatRecordedAtDisplayJa(item.recorded_at)}
                     </Text>
                   </View>
-                  <Text style={[styles.cardSub, { color: c.textSecondary }]}>
+                  <Text
+                    style={[careRecordListCardSummaryTextStyle(layout.isTablet), { color: c.text }]}
+                    numberOfLines={10}>
                     {formatVitalSummaryLine(item)}
                   </Text>
                   <View style={styles.cardTags}>
@@ -329,8 +334,10 @@ export function VitalRecordsListScreen() {
                     </View>
                   </View>
                   {item.memo ? (
-                    <Text style={[styles.cardMemo, { color: c.textSecondary }]} numberOfLines={2}>
-                      {item.memo}
+                    <Text
+                      style={[careRecordListCardMemoTextStyle(layout.isTablet), { color: c.textSecondary }]}
+                      numberOfLines={4}>
+                      メモ: {item.memo}
                     </Text>
                   ) : null}
                   <View style={styles.cardActions}>
@@ -459,17 +466,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
-  cardDate: {
-    fontSize: 16,
-    fontWeight: '800',
-    flex: 1,
-  },
-  cardSub: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 8,
-    lineHeight: 18,
-  },
   cardTags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -491,11 +487,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     flexShrink: 1,
-  },
-  cardMemo: {
-    fontSize: 13,
-    marginTop: 10,
-    lineHeight: 18,
   },
   cardActions: {
     flexDirection: 'row',
