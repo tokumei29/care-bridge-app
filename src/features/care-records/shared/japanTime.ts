@@ -210,6 +210,11 @@ export function shiftJapanMonth(year: number, month: number, delta: number): { y
 
 /** 日本時間の暦日 `dateKey` の翌日（YYYY-MM-DD） */
 export function addOneJapanCalendarDay(dateKey: string): string {
+  return addJapanCalendarDays(dateKey, 1);
+}
+
+/** 日本時間の暦日を `deltaDays` 日ずらす（負数で過去） */
+export function addJapanCalendarDays(dateKey: string, deltaDays: number): string {
   const p = parseJapanDateKey(dateKey);
   if (!p) {
     throw new Error(`Invalid dateKey: ${dateKey}`);
@@ -218,5 +223,5 @@ export function addOneJapanCalendarDay(dateKey: string): string {
   if (Number.isNaN(ms)) {
     throw new Error(`Invalid dateKey: ${dateKey}`);
   }
-  return formatJapanDateKey(new Date(ms + 24 * 60 * 60 * 1000));
+  return formatJapanDateKey(new Date(ms + deltaDays * 24 * 60 * 60 * 1000));
 }

@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
+import { DualLineChart } from '@/components/charts/DualLineChart';
 import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -41,9 +42,16 @@ import {
   isRecordedAtOnJapanDate,
   MonthCalendar,
 } from '@/features/care-records/shared';
+import {
+  buildExcretionCountsLast7JapanDays,
+  buildExcretionDayCountSummary,
+} from '@/features/care-records/excretion/excretionWeekChartData';
 import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
+
+/** `styles.chartSection` の paddingHorizontal と一致（グラフの width はカード内側に合わせる） */
+const EXCRETION_CHART_CARD_PAD_H = 14;
 
 function formatExcretionSummaryLine(item: ExcretionRecordRecord): string {
   const uLabel =
@@ -56,7 +64,7 @@ function formatExcretionSummaryLine(item: ExcretionRecordRecord): string {
       item.urination_amount && (URINATION_AMOUNTS as readonly string[]).includes(item.urination_amount)
         ? URINATION_AMOUNT_LABEL[item.urination_amount as (typeof URINATION_AMOUNTS)[number]]
         : item.urination_amount ?? '—';
-    uPart += `（${amt}）`;
+    uPart += ` · 尿量: ${amt}`;
   }
 
   const dLabel =
@@ -69,12 +77,12 @@ function formatExcretionSummaryLine(item: ExcretionRecordRecord): string {
       item.defecation_amount && (DEFECATION_AMOUNTS as readonly string[]).includes(item.defecation_amount)
         ? DEFECATION_AMOUNT_LABEL[item.defecation_amount as (typeof DEFECATION_AMOUNTS)[number]]
         : item.defecation_amount ?? '—';
-    dPart += `（${amt}）`;
+    dPart += ` · 便量: ${amt}`;
     const stool =
       item.stool_condition && (STOOL_CONDITIONS as readonly string[]).includes(item.stool_condition)
         ? STOOL_CONDITION_LABEL[item.stool_condition as (typeof STOOL_CONDITIONS)[number]]
         : item.stool_condition ?? '—';
-    dPart += ` · 便: ${stool}`;
+    dPart += ` · 排便の状態: ${stool}`;
   }
 
   return `${uPart} · ${dPart}`;
@@ -88,6 +96,7 @@ export function ExcretionRecordsListScreen() {
   const excretionRecordsApi = useExcretionRecordsApi();
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
+  const defecationLineColor = scheme === 'dark' ? '#e8a87c' : '#b5651d';
   useCareRecipientStackBackHeader(recipientId, c);
   const layout = useResponsiveLayout();
   const insets = useSafeAreaInsets();
@@ -147,6 +156,21 @@ export function ExcretionRecordsListScreen() {
   const filteredRecords = useMemo(() => {
     return records.filter((r) => isRecordedAtOnJapanDate(r.recorded_at, filterDateKey));
   }, [records, filterDateKey]);
+
+  const excretionWeekDualPoints = useMemo(
+    () =>
+      buildExcretionCountsLast7JapanDays(records).map((p) => ({
+        xLabel: p.xLabel,
+        valueA: p.urinationCount,
+        valueB: p.defecationCount,
+      })),
+    [records]
+  );
+
+  const excretionSelectedDaySummary = useMemo(
+    () => buildExcretionDayCountSummary(records, filterDateKey),
+    [records, filterDateKey]
+  );
 
   const goNew = useCallback(() => {
     router.push({
@@ -280,6 +304,105 @@ export function ExcretionRecordsListScreen() {
                 </Text>
                 <MonthCalendar selectedKey={filterDateKey} onChangeKey={setFilterDateKey} />
               </View>
+
+              {isSignedIn && records.length > 0 ? (
+                <View
+                  style={[
+                    styles.daySummarySection,
+                    {
+                      borderColor: c.borderStrong,
+                      backgroundColor: c.surfaceSolid,
+                    },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.daySummaryHeading,
+                      { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                    ]}>
+                    {excretionSelectedDaySummary.xLabel}の排尿・排便の回数
+                  </Text>
+                  <Text style={[styles.daySummaryCaption, { color: c.textSecondary }]}>
+                    上の一覧と同じ日（{filterDateKey}）の集計です。記録ごとに「排尿: あり」「排便: あり」が付いていればそれぞれ1回ずつ数えます（週のグラフと同じ）。
+                  </Text>
+                  <View style={styles.daySummaryRows}>
+                    <View style={styles.daySummaryRow}>
+                      <Text
+                        style={[
+                          styles.daySummaryLabel,
+                          { color: c.textSecondary, fontSize: layout.isTablet ? 16 : 15 },
+                        ]}>
+                        排尿の回数
+                      </Text>
+                      <Text
+                        style={[
+                          styles.daySummaryValue,
+                          { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                        ]}>
+                        {excretionSelectedDaySummary.urinationCount} 回
+                      </Text>
+                    </View>
+                    <View style={styles.daySummaryRow}>
+                      <Text
+                        style={[
+                          styles.daySummaryLabel,
+                          { color: c.textSecondary, fontSize: layout.isTablet ? 16 : 15 },
+                        ]}>
+                        排便の回数
+                      </Text>
+                      <Text
+                        style={[
+                          styles.daySummaryValue,
+                          { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                        ]}>
+                        {excretionSelectedDaySummary.defecationCount} 回
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ) : null}
+
+              {isSignedIn ? (
+                <View
+                  style={[
+                    styles.chartSection,
+                    {
+                      borderColor: c.borderStrong,
+                      backgroundColor: c.surfaceSolid,
+                    },
+                  ]}>
+                  <Text style={[styles.chartTitle, { color: c.text }]}>
+                    直近7日間の排尿・排便（1日あたりの回数）
+                  </Text>
+                  <Text style={[styles.chartSub, { color: c.textSecondary }]}>
+                    記録の日時（日本時間の日付）ごとに、「排尿: あり」「排便: あり」の件数をそれぞれ合計します。1件で両方ある場合は両方に1回ずつ入ります。今日を含む過去7暦日分です。
+                  </Text>
+                  <DualLineChart
+                    points={excretionWeekDualPoints}
+                    width={Math.max(1, layout.railInnerWidth - EXCRETION_CHART_CARD_PAD_H * 2)}
+                    height={layout.isTablet ? 200 : 176}
+                    lineColorA={c.accent}
+                    lineColorB={defecationLineColor}
+                    gridColor={c.border}
+                    axisLabelColor={c.textSecondary}
+                    minValue={0}
+                    yTickCount={7}
+                    yTickSnap={1}
+                  />
+                  <View style={styles.chartLegendRow}>
+                    <View style={styles.chartLegendItem}>
+                      <View style={[styles.chartLegendSwatch, { backgroundColor: c.accent }]} />
+                      <Text style={[styles.chartLegendLabel, { color: c.textSecondary }]}>排尿（回）</Text>
+                    </View>
+                    <View style={styles.chartLegendItem}>
+                      <View
+                        style={[styles.chartLegendSwatch, { backgroundColor: defecationLineColor }]}
+                      />
+                      <Text style={[styles.chartLegendLabel, { color: c.textSecondary }]}>排便（回）</Text>
+                    </View>
+                  </View>
+                </View>
+              ) : null}
+
               {loading && records.length === 0 ? (
                 <View style={styles.listLoading}>
                   <ActivityIndicator color={c.accent} />
@@ -436,6 +559,83 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
+  },
+  daySummarySection: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  daySummaryHeading: {
+    fontWeight: '800',
+    lineHeight: 26,
+    marginBottom: 8,
+  },
+  daySummaryCaption: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    marginBottom: 16,
+  },
+  daySummaryRows: {
+    gap: 14,
+  },
+  daySummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  daySummaryLabel: {
+    flex: 1,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  daySummaryValue: {
+    flexShrink: 0,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  chartSection: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 16,
+    paddingHorizontal: EXCRETION_CHART_CARD_PAD_H,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  chartSub: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  chartLegendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 18,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chartLegendSwatch: {
+    width: 22,
+    height: 4,
+    borderRadius: 2,
+  },
+  chartLegendLabel: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   sectionTitleRow: {
     flexDirection: 'row',

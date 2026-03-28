@@ -13,6 +13,13 @@ export const MEAL_SLOT_LABEL: Record<MealSlotId, string> = {
   dinner: '夕食',
 };
 
+/**
+ * 1日あたりの主食・副食の平均を出すときに含める食事タイミング。
+ * 間食は量入力の扱いが別のため算定から除く。
+ */
+export const MEAL_SLOTS_FOR_DAILY_AMOUNT_AVG = ['breakfast', 'lunch', 'dinner'] as const;
+export type MealSlotForDailyAmountAvg = (typeof MEAL_SLOTS_FOR_DAILY_AMOUNT_AVG)[number];
+
 /** 主食・副食の摂取量 0〜10（10 = 全部） */
 export const AMOUNT_MIN = 0;
 export const AMOUNT_MAX = 10;

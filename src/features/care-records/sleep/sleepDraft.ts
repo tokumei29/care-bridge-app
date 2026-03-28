@@ -76,12 +76,18 @@ export function draftToSleepWritePayload(draft: SleepRecordDraft): SleepRecordWr
   };
 }
 
-/** 臥床〜起床の実時間（ISO）から「8時間30分」形式。不正・逆転時は null */
-export function formatSleepIntervalDurationJa(beddedAtIso: string, wokeAtIso: string): string | null {
+/** 臥床〜起床の分数（集計・グラフ用）。不正・逆転時は null */
+export function sleepIntervalMinutes(beddedAtIso: string, wokeAtIso: string): number | null {
   const t0 = new Date(beddedAtIso).getTime();
   const t1 = new Date(wokeAtIso).getTime();
   if (Number.isNaN(t0) || Number.isNaN(t1) || t1 <= t0) return null;
-  const totalMin = Math.floor((t1 - t0) / 60000);
+  return Math.floor((t1 - t0) / 60000);
+}
+
+/** 臥床〜起床の実時間（ISO）から「8時間30分」形式。不正・逆転時は null */
+export function formatSleepIntervalDurationJa(beddedAtIso: string, wokeAtIso: string): string | null {
+  const totalMin = sleepIntervalMinutes(beddedAtIso, wokeAtIso);
+  if (totalMin == null) return null;
   if (totalMin < 1) return '1分未満';
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;

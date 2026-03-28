@@ -53,6 +53,16 @@ export function parseOptionalIntField(s: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** 体温・血圧（いずれか片方でも）・脈拍・SpO₂の少なくとも1つが入力されているか */
+export function vitalDraftHasAnyMeasurement(draft: VitalRecordDraft): boolean {
+  if (parseOptionalTemperature(draft.temperature) != null) return true;
+  if (parseOptionalIntField(draft.bloodPressureSystolic) != null) return true;
+  if (parseOptionalIntField(draft.bloodPressureDiastolic) != null) return true;
+  if (parseOptionalIntField(draft.pulseRate) != null) return true;
+  if (parseOptionalIntField(draft.spo2) != null) return true;
+  return false;
+}
+
 export function createEmptyVitalDraftFromJapanNow(): VitalRecordDraft {
   const p = getJapanNowParts();
   return {

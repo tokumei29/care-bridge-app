@@ -14,6 +14,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
+import { SparseDualLineChart } from '@/components/charts/SparseDualLineChart';
+import { SparseLineChart } from '@/components/charts/SparseLineChart';
 import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -36,9 +38,20 @@ import {
   PRE_SUBMIT_ISSUE_LABEL,
   type MealSlotId,
 } from '@/features/care-records/meals/mealConstants';
+import {
+  boundsForStapleSideDailyAvgChart,
+  boundsForWaterDailyTotalChart,
+  buildMealDayChartSlot,
+  buildMealLast7DaysChartSlots,
+  mealDaySummaryDisplayStrings,
+  formatStapleSideAvgAxisLabel,
+} from '@/features/care-records/meals/mealsDayChartData';
 import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
+
+/** `styles.chartSection` の paddingHorizontal と一致 */
+const MEAL_CHART_CARD_PAD_H = 14;
 
 export function MealRecordsListScreen() {
   const { recipientId } = useLocalSearchParams<{ recipientId: string }>();
@@ -48,6 +61,9 @@ export function MealRecordsListScreen() {
   const mealRecordsApi = useMealRecordsApi();
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
+  const stapleAvgLineColor = scheme === 'dark' ? '#ffb74d' : '#e65100';
+  const sideAvgLineColor = scheme === 'dark' ? '#81c784' : '#2e7d32';
+  const waterTotalLineColor = scheme === 'dark' ? '#64b5f6' : '#1565c0';
   useCareRecipientStackBackHeader(recipientId, c);
   const layout = useResponsiveLayout();
   const insets = useSafeAreaInsets();
@@ -107,6 +123,41 @@ export function MealRecordsListScreen() {
   const filteredRecords = useMemo(() => {
     return records.filter((r) => isRecordedAtOnJapanDate(r.recorded_at, filterDateKey));
   }, [records, filterDateKey]);
+
+  const mealLast7Slots = useMemo(() => buildMealLast7DaysChartSlots(records), [records]);
+  const mealCalendarDaySlot = useMemo(
+    () => buildMealDayChartSlot(records, filterDateKey),
+    [records, filterDateKey]
+  );
+
+  const mealStapleSidePoints = useMemo(
+    () =>
+      mealLast7Slots.map((s) => ({
+        xLabel: s.xLabel,
+        valueA: s.stapleAvg,
+        valueB: s.sideAvg,
+      })),
+    [mealLast7Slots]
+  );
+
+  const mealWaterPoints = useMemo(
+    () => mealLast7Slots.map((s) => ({ xLabel: s.xLabel, value: s.waterTotalMl })),
+    [mealLast7Slots]
+  );
+
+  const mealStapleSideBounds = useMemo(
+    () => boundsForStapleSideDailyAvgChart(mealLast7Slots),
+    [mealLast7Slots]
+  );
+  const mealWaterBounds = useMemo(() => boundsForWaterDailyTotalChart(mealLast7Slots), [mealLast7Slots]);
+
+  const mealDaySummaryStr = useMemo(
+    () => mealDaySummaryDisplayStrings(mealCalendarDaySlot),
+    [mealCalendarDaySlot]
+  );
+
+  const mealChartW = Math.max(1, layout.railInnerWidth - MEAL_CHART_CARD_PAD_H * 2);
+  const mealChartH = layout.isTablet ? 158 : 146;
 
   const goNew = useCallback(() => {
     router.push({
@@ -240,6 +291,181 @@ export function MealRecordsListScreen() {
                   </Text>
                   <MonthCalendar selectedKey={filterDateKey} onChangeKey={setFilterDateKey} />
                 </View>
+
+                {isSignedIn && records.length > 0 ? (
+                  <View
+                    style={[
+                      styles.daySummarySection,
+                      {
+                        borderColor: c.borderStrong,
+                        backgroundColor: c.surfaceSolid,
+                      },
+                    ]}>
+                    <Text
+                      style={[
+                        styles.daySummaryHeading,
+                        { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                      ]}>
+                      {mealCalendarDaySlot.xLabel}の食事量の平均、水分の合計
+                    </Text>
+                    <Text style={[styles.daySummaryCaption, { color: c.textSecondary }]}>
+                      上の一覧と同じ日（{filterDateKey}）の集計です。主食・副食の平均は朝・昼・夕の記録から、間食は回数だけ数えています。
+                    </Text>
+
+                    <View style={styles.daySummaryRows}>
+                      <View style={styles.daySummaryRow}>
+                        <Text
+                          style={[
+                            styles.daySummaryLabel,
+                            { color: c.textSecondary, fontSize: layout.isTablet ? 16 : 15 },
+                          ]}>
+                          朝食・昼食・夕食の記録
+                        </Text>
+                        <Text
+                          style={[
+                            styles.daySummaryValue,
+                            { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                          ]}>
+                          {mealCalendarDaySlot.mainMealCount} 回
+                        </Text>
+                      </View>
+                      <View style={styles.daySummaryRow}>
+                        <Text
+                          style={[
+                            styles.daySummaryLabel,
+                            { color: c.textSecondary, fontSize: layout.isTablet ? 16 : 15 },
+                          ]}>
+                          間食の記録
+                        </Text>
+                        <Text
+                          style={[
+                            styles.daySummaryValue,
+                            { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                          ]}>
+                          {mealCalendarDaySlot.snackCount} 回
+                        </Text>
+                      </View>
+                      <View style={styles.daySummaryRow}>
+                        <Text
+                          style={[
+                            styles.daySummaryLabel,
+                            { color: c.textSecondary, fontSize: layout.isTablet ? 16 : 15 },
+                          ]}>
+                          主食の平均（0〜10）
+                        </Text>
+                        <Text
+                          style={[
+                            styles.daySummaryValue,
+                            { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                          ]}>
+                          {mealDaySummaryStr.stapleAvg}
+                        </Text>
+                      </View>
+                      <View style={styles.daySummaryRow}>
+                        <Text
+                          style={[
+                            styles.daySummaryLabel,
+                            { color: c.textSecondary, fontSize: layout.isTablet ? 16 : 15 },
+                          ]}>
+                          副食の平均（0〜10）
+                        </Text>
+                        <Text
+                          style={[
+                            styles.daySummaryValue,
+                            { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                          ]}>
+                          {mealDaySummaryStr.sideAvg}
+                        </Text>
+                      </View>
+                      <View style={styles.daySummaryRow}>
+                        <Text
+                          style={[
+                            styles.daySummaryLabel,
+                            { color: c.textSecondary, fontSize: layout.isTablet ? 16 : 15 },
+                          ]}>
+                          水分の合計
+                        </Text>
+                        <Text
+                          style={[
+                            styles.daySummaryValue,
+                            { color: c.text, fontSize: layout.isTablet ? 20 : 18 },
+                          ]}>
+                          {mealDaySummaryStr.waterTotal}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
+
+                {isSignedIn ? (
+                  <View
+                    style={[
+                      styles.chartSection,
+                      {
+                        borderColor: c.borderStrong,
+                        backgroundColor: c.surfaceSolid,
+                      },
+                    ]}>
+                    <Text style={[styles.chartTitle, { color: c.text }]}>
+                      食事量・水分（直近7日・日本時間の暦日）
+                    </Text>
+                    <Text style={[styles.chartSub, { color: c.textSecondary }]}>
+                      グラフは日本時間の今日までの直近7暦日です。主食・副食は間食を除く各食事の量（0〜10）をその日の記録数で割った1日の平均、水分はその日の
+                      ml 合計です。記録がない日は点が出ませんが、前後の日に値があれば線で結びます。
+                    </Text>
+
+                    {records.length === 0 ? (
+                      <Text style={[styles.chartEmptyNote, { color: c.textSecondary }]}>
+                        まだ記録がないため、グラフを表示できません。
+                      </Text>
+                    ) : (
+                      <>
+                        <Text style={[styles.chartBlockTitle, { color: c.text }]}>
+                          主食・副食の日平均（0〜10）
+                        </Text>
+                        <SparseDualLineChart
+                          points={mealStapleSidePoints}
+                          width={mealChartW}
+                          height={mealChartH}
+                          lineColorA={stapleAvgLineColor}
+                          lineColorB={sideAvgLineColor}
+                          gridColor={c.border}
+                          axisLabelColor={c.textSecondary}
+                          minValue={mealStapleSideBounds.min}
+                          maxValue={mealStapleSideBounds.max}
+                          yTickCount={6}
+                          formatYLabel={formatStapleSideAvgAxisLabel}
+                        />
+                        <View style={styles.chartLegendRow}>
+                          <View style={styles.chartLegendItem}>
+                            <View style={[styles.chartLegendSwatch, { backgroundColor: stapleAvgLineColor }]} />
+                            <Text style={[styles.chartLegendLabel, { color: c.textSecondary }]}>主食（平均）</Text>
+                          </View>
+                          <View style={styles.chartLegendItem}>
+                            <View style={[styles.chartLegendSwatch, { backgroundColor: sideAvgLineColor }]} />
+                            <Text style={[styles.chartLegendLabel, { color: c.textSecondary }]}>副食（平均）</Text>
+                          </View>
+                        </View>
+
+                        <Text style={[styles.chartBlockTitleSpaced, { color: c.text }]}>水分（1日合計・ml）</Text>
+                        <SparseLineChart
+                          points={mealWaterPoints}
+                          width={mealChartW}
+                          height={mealChartH}
+                          lineColor={waterTotalLineColor}
+                          gridColor={c.border}
+                          axisLabelColor={c.textSecondary}
+                          minValue={mealWaterBounds.min}
+                          maxValue={mealWaterBounds.max}
+                          yTickCount={6}
+                          yTickSnap={1}
+                          formatYLabel={(v) => `${Math.round(v)}`}
+                        />
+                      </>
+                    )}
+                  </View>
+                ) : null}
+
                 {loading && records.length === 0 ? (
                   <View style={styles.listLoading}>
                     <ActivityIndicator color={c.accent} />
@@ -402,6 +628,100 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
+  },
+  chartSection: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 16,
+    paddingHorizontal: MEAL_CHART_CARD_PAD_H,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  chartSub: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  chartEmptyNote: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 21,
+  },
+  chartBlockTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  chartBlockTitleSpaced: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  chartLegendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 18,
+    marginTop: 10,
+    marginBottom: 4,
+    alignItems: 'center',
+  },
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chartLegendSwatch: {
+    width: 22,
+    height: 4,
+    borderRadius: 2,
+  },
+  chartLegendLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  daySummarySection: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  daySummaryHeading: {
+    fontWeight: '800',
+    lineHeight: 26,
+    marginBottom: 8,
+  },
+  daySummaryCaption: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    marginBottom: 16,
+  },
+  daySummaryRows: {
+    gap: 14,
+  },
+  daySummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  daySummaryLabel: {
+    flex: 1,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  daySummaryValue: {
+    flexShrink: 0,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   sectionTitleRow: {
     flexDirection: 'row',

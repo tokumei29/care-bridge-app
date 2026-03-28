@@ -148,9 +148,9 @@ export function buildExcretionSummaryText(draft: ExcretionRecordDraft, recipient
     '',
     `日付（日本時間）: ${draft.dateKey}`,
     `時刻: ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`,
-    `排尿: ${uP}${draft.urinationPresence === 'present' ? `（量: ${uA}）` : ''}`,
-    `排便: ${dP}${draft.defecationPresence === 'present' ? `（量: ${dA}）` : ''}`,
-    `便の状態: ${stool}`,
+    `排尿: ${uP}${draft.urinationPresence === 'present' ? ` · 尿量: ${uA}` : ''}`,
+    `排便: ${dP}${draft.defecationPresence === 'present' ? ` · 便量: ${dA}` : ''}`,
+    ...(draft.defecationPresence === 'present' ? [`排便の状態: ${stool}`] : []),
     `そのときの様子: ${PRE_SUBMIT_ISSUE_LABEL[draft.preSubmitIssue]}`,
     draft.memo.trim() ? `メモ: ${draft.memo.trim()}` : 'メモ: （なし）',
   ];

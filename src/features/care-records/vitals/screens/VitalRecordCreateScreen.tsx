@@ -23,6 +23,7 @@ import {
   buildVitalSummaryText,
   createEmptyVitalDraftFromJapanNow,
   draftToVitalWritePayload,
+  vitalDraftHasAnyMeasurement,
   type VitalRecordDraft,
 } from '@/features/care-records/vitals/vitalsDraft';
 import { useVitalsStackBackHeader } from '@/features/care-records/vitals/useVitalsStackBackHeader';
@@ -61,6 +62,13 @@ export function VitalRecordCreateScreen() {
 
   const submitToRails = useCallback(async () => {
     if (!recipientId || !isSignedIn || isSubmitting) return;
+    if (!vitalDraftHasAnyMeasurement(draft)) {
+      Alert.alert(
+        '入力が不足しています',
+        '体温・血圧・脈拍・SpO₂のうち、いずれか1つ以上は入力してください。'
+      );
+      return;
+    }
     setIsSubmitting(true);
     try {
       await vitalRecordsApi.create(recipientId, draftToVitalWritePayload(draft));
@@ -79,6 +87,13 @@ export function VitalRecordCreateScreen() {
     if (!recipient) return;
     if (!isSignedIn) {
       Alert.alert('ログインが必要です', '記録を保存するには Supabase でサインインしてください。');
+      return;
+    }
+    if (!vitalDraftHasAnyMeasurement(draft)) {
+      Alert.alert(
+        '入力が不足しています',
+        '体温・血圧・脈拍・SpO₂のうち、いずれか1つ以上は入力してください。'
+      );
       return;
     }
     Alert.alert('入力内容の確認', buildVitalSummaryText(draft, recipient.name), [

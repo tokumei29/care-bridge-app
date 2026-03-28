@@ -3,7 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useExplicitStackBackHeader } from '@/features/care-records/useExplicitStackBackHeader';
 
@@ -33,6 +34,7 @@ export function RecipientCareHomeScreen() {
   const c = getCareBridgeColors(scheme);
   const themeKey = scheme === 'dark' ? 'dark' : 'light';
   const layout = useResponsiveLayout();
+  const insets = useSafeAreaInsets();
 
   const dashboardHref = useMemo(() => '/' as Href, []);
   useExplicitStackBackHeader({ fallback: dashboardHref, tintColor: c.accent });
@@ -130,8 +132,17 @@ export function RecipientCareHomeScreen() {
     <ScreenBackdrop>
       <>
         <Stack.Screen options={{ title: `${recipient.name}さん` }} />
-        <ContentRail layout={layout}>
-          <View style={[styles.body, layout.isTablet && styles.bodyTablet]}>
+        <ContentRail layout={layout} style={styles.contentRailFill}>
+          <View style={styles.railScrollHost}>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={[
+                styles.body,
+                layout.isTablet && styles.bodyTablet,
+                { paddingBottom: (layout.isTablet ? 48 : 32) + insets.bottom },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator>
             <LinearGradient
               colors={[...heroShineGradient[themeKey].colors]}
               start={heroShineGradient[themeKey].start}
@@ -212,6 +223,7 @@ export function RecipientCareHomeScreen() {
               その他
             </Text>
             {renderMenuGrid(menuOther, recipient.id)}
+            </ScrollView>
           </View>
         </ContentRail>
       </>
@@ -220,14 +232,25 @@ export function RecipientCareHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  body: {
+  contentRailFill: {
     flex: 1,
+    minHeight: 0,
+  },
+  /** Stack から渡る高さの中で ScrollView が伸びるようにする */
+  railScrollHost: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  scroll: {
+    flex: 1,
+  },
+  body: {
     paddingTop: 12,
-    paddingBottom: 32,
   },
   bodyTablet: {
     paddingTop: 16,
-    paddingBottom: 48,
   },
   centered: {
     flex: 1,

@@ -24,13 +24,14 @@ export const DEFECATION_PRESENCE_LABEL: Record<DefecationPresenceId, string> = {
 };
 
 /** API 値: 排便量（ありのとき） */
-export const DEFECATION_AMOUNTS = ['small', 'palm_half', 'palm_full', 'two_hands'] as const;
+export const DEFECATION_AMOUNTS = ['small', 'palm_half', 'palm_full', 'two_hands', 'other'] as const;
 export type DefecationAmountId = (typeof DEFECATION_AMOUNTS)[number];
 export const DEFECATION_AMOUNT_LABEL: Record<DefecationAmountId, string> = {
   small: '少量',
   palm_half: '片手半分',
   palm_full: '片手いっぱい',
   two_hands: '両手で掬う量',
+  other: 'その他',
 };
 
 /** API 値: 便の状態 */

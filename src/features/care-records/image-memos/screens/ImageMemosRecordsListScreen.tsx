@@ -22,6 +22,7 @@ import { useImageMemosApi } from '@/api/hooks/useImageMemosApi';
 import type { ImageMemoRecord } from '@/api/types/imageMemo';
 import { useCareRecipients } from '@/features/care-recipients';
 import { ImageMemoListThumb } from '@/features/care-records/image-memos/components/ImageMemoListThumb';
+import { ImageMemoPreviewModal } from '@/features/care-records/image-memos/components/ImageMemoPreviewModal';
 import { PRE_SUBMIT_ISSUE_LABEL } from '@/features/care-records/meals/mealConstants';
 import {
   careRecordListCardDateTextStyle,
@@ -54,6 +55,7 @@ export function ImageMemosRecordsListScreen() {
   const [listError, setListError] = useState<string | null>(null);
 
   const [filterDateKey, setFilterDateKey] = useState(() => getJapanNowParts().dateKey);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const recipient = recipientId ? getRecipientById(recipientId) : undefined;
 
@@ -195,6 +197,11 @@ export function ImageMemosRecordsListScreen() {
 
   return (
     <ScreenBackdrop>
+      <ImageMemoPreviewModal
+        visible={previewImageUrl != null}
+        imageUrl={previewImageUrl}
+        onRequestClose={() => setPreviewImageUrl(null)}
+      />
       <View style={styles.flex}>
         <FlatList
           nestedScrollEnabled
@@ -208,6 +215,9 @@ export function ImageMemosRecordsListScreen() {
               <Text style={[styles.lead, { color: c.textSecondary }]}>
                 {`${recipient.name}さんの画像メモ一覧です（新しい順・日本時間）。日常の様子や、ケガ・褥瘡の経過など介護に必要な写真を日時・メモ・問題の有無とともに確認できます。各行の「編集」で修正、「削除」で消せます。`}
               </Text>
+              {isSignedIn ? (
+                <Text style={[styles.thumbTapHint, { color: c.accent }]}>サムネイルをタップすると、写真を拡大表示できます。</Text>
+              ) : null}
               {!isSignedIn ? (
                 <View
                   style={[
@@ -275,7 +285,14 @@ export function ImageMemosRecordsListScreen() {
                     },
                   ]}>
                   <View style={styles.cardRow}>
-                    <ImageMemoListThumb imageUrl={item.image_url} size={thumbSize} c={c} />
+                    <Pressable
+                      onPress={() => setPreviewImageUrl(item.image_url)}
+                      disabled={!item.image_url?.trim()}
+                      accessibilityRole="button"
+                      accessibilityLabel="画像を拡大表示"
+                      style={({ pressed }) => ({ opacity: !item.image_url?.trim() ? 0.45 : pressed ? 0.85 : 1 })}>
+                      <ImageMemoListThumb imageUrl={item.image_url} size={thumbSize} c={c} />
+                    </Pressable>
                     <View style={styles.cardMain}>
                       <Text style={[careRecordListCardDateTextStyle, { color: c.textSecondary }]}>
                         {formatRecordedAtDisplayJa(item.recorded_at)}
@@ -369,6 +386,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 14,
     lineHeight: 20,
+  },
+  thumbTapHint: {
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
+    marginTop: -6,
+    marginBottom: 14,
   },
   authBanner: {
     borderRadius: 16,

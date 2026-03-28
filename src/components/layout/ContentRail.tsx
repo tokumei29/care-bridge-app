@@ -1,17 +1,19 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { ResponsiveLayout } from '@/lib/useResponsiveLayout';
 
 type Props = {
   layout: ResponsiveLayout;
   children: React.ReactNode;
+  /** 例: 画面いっぱいに伸ばして内側を ScrollView で埋めるとき `{ flex: 1, minHeight: 0 }` */
+  style?: StyleProp<ViewStyle>;
 };
 
 /**
  * Centers content on tablets with a max width; phones use full width minus gutters.
  */
-export function ContentRail({ layout, children }: Props) {
+export function ContentRail({ layout, children, style }: Props) {
   return (
     <View
       style={[
@@ -22,6 +24,7 @@ export function ContentRail({ layout, children }: Props) {
           width: '100%',
           alignSelf: 'center',
         },
+        style,
       ]}>
       {children}
     </View>

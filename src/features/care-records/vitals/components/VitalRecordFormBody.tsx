@@ -59,7 +59,7 @@ export function VitalRecordFormBody({
       contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}>
       <ContentRail layout={layout}>
         <Text style={[styles.lead, { color: c.textSecondary }]}>
-          {`${recipientName}さんのバイタルを記録します。日付・時刻（日本時間）を選び、体温・血圧・脈拍・SpO₂・メモを入力してください（未測定の項目は空欄のままで構いません）。`}
+          {`${recipientName}さんのバイタルを記録します。日付・時刻（日本時間）を選び、体温・血圧・脈拍・SpO₂・メモを入力してください。体温・血圧・脈拍・SpO₂のうち、どれか1つ以上は必須です。それ以外の未測定の項目は空欄のままで構いません。`}
         </Text>
 
         {!isSignedIn ? (

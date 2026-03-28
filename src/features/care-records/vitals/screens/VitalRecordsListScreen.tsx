@@ -14,6 +14,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
+import { SparseDualLineChart } from '@/components/charts/SparseDualLineChart';
+import { SparseLineChart } from '@/components/charts/SparseLineChart';
 import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -32,8 +34,18 @@ import {
   MonthCalendar,
 } from '@/features/care-records/shared';
 import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
+import {
+  boundsForBloodPressureChart,
+  boundsForBodyTemperatureChart,
+  boundsForIntegerChart,
+  buildVitalLast7ChartSlots,
+  formatTempAxisLabel,
+} from '@/features/care-records/vitals/vitalsLast7ChartData';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
+
+/** `styles.chartSection` の paddingHorizontal と一致 */
+const VITAL_CHART_CARD_PAD_H = 14;
 
 function formatVitalSummaryLine(item: VitalRecordRecord): string {
   const parts: string[] = [];
@@ -62,6 +74,11 @@ export function VitalRecordsListScreen() {
   const vitalRecordsApi = useVitalRecordsApi();
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
+  /** 血圧のみ：最高＝暖色・最低＝寒色でアクセント（体温など）と被らせない */
+  const bloodPressureSystolicColor = scheme === 'dark' ? '#ff8a80' : '#c62828';
+  const bloodPressureDiastolicColor = scheme === 'dark' ? '#82b1ff' : '#1565c0';
+  const pulseLineColor = scheme === 'dark' ? '#e8a87c' : '#b5651d';
+  const spo2LineColor = scheme === 'dark' ? '#b4a7ff' : '#5c4dbe';
   useCareRecipientStackBackHeader(recipientId, c);
   const layout = useResponsiveLayout();
   const insets = useSafeAreaInsets();
@@ -121,6 +138,44 @@ export function VitalRecordsListScreen() {
   const filteredRecords = useMemo(() => {
     return records.filter((r) => isRecordedAtOnJapanDate(r.recorded_at, filterDateKey));
   }, [records, filterDateKey]);
+
+  const vitalSlots = useMemo(() => buildVitalLast7ChartSlots(records), [records]);
+
+  const vitalTempPoints = useMemo(
+    () => vitalSlots.map((s) => ({ xLabel: s.xLabel, value: s.body_temperature })),
+    [vitalSlots]
+  );
+  const vitalBpPoints = useMemo(
+    () =>
+      vitalSlots.map((s) => ({
+        xLabel: s.xLabel,
+        valueA: s.blood_pressure_systolic,
+        valueB: s.blood_pressure_diastolic,
+      })),
+    [vitalSlots]
+  );
+  const vitalPulsePoints = useMemo(
+    () => vitalSlots.map((s) => ({ xLabel: s.xLabel, value: s.pulse_rate })),
+    [vitalSlots]
+  );
+  const vitalSpo2Points = useMemo(
+    () => vitalSlots.map((s) => ({ xLabel: s.xLabel, value: s.spo2 })),
+    [vitalSlots]
+  );
+
+  const vitalTempBounds = useMemo(() => boundsForBodyTemperatureChart(vitalSlots), [vitalSlots]);
+  const vitalBpBounds = useMemo(() => boundsForBloodPressureChart(vitalSlots), [vitalSlots]);
+  const vitalPulseBounds = useMemo(
+    () => boundsForIntegerChart(vitalSlots, (s) => s.pulse_rate, { defaultMax: 120 }),
+    [vitalSlots]
+  );
+  const vitalSpo2Bounds = useMemo(
+    () => boundsForIntegerChart(vitalSlots, (s) => s.spo2, { defaultMax: 100 }),
+    [vitalSlots]
+  );
+
+  const vitalChartW = Math.max(1, layout.railInnerWidth - VITAL_CHART_CARD_PAD_H * 2);
+  const vitalChartH = layout.isTablet ? 158 : 146;
 
   const goNew = useCallback(() => {
     router.push({
@@ -254,6 +309,105 @@ export function VitalRecordsListScreen() {
                 </Text>
                 <MonthCalendar selectedKey={filterDateKey} onChangeKey={setFilterDateKey} />
               </View>
+
+              {isSignedIn ? (
+                <View
+                  style={[
+                    styles.chartSection,
+                    {
+                      borderColor: c.borderStrong,
+                      backgroundColor: c.surfaceSolid,
+                    },
+                  ]}>
+                  <Text style={[styles.chartTitle, { color: c.text }]}>
+                    バイタルの推移（直近7回・測定時刻順）
+                  </Text>
+                  <Text style={[styles.chartSub, { color: c.textSecondary }]}>
+                    一覧から新しい順に最大7件を取り、グラフでは左から古い測定→右が新しい測定です。ある測定でその項目だけ未入力のときはそのスロットに点は出ませんが、前後の測定に値があれば線で結びます（中間の値を表すわけではありません）。
+                  </Text>
+
+                  {vitalSlots.length === 0 ? (
+                    <Text style={[styles.chartEmptyNote, { color: c.textSecondary }]}>
+                      まだ記録がないため、グラフを表示できません。
+                    </Text>
+                  ) : (
+                    <>
+                      <Text style={[styles.chartBlockTitle, { color: c.text }]}>体温（℃）</Text>
+                      <SparseLineChart
+                        points={vitalTempPoints}
+                        width={vitalChartW}
+                        height={vitalChartH}
+                        lineColor={c.accent}
+                        gridColor={c.border}
+                        axisLabelColor={c.textSecondary}
+                        minValue={vitalTempBounds.min}
+                        maxValue={vitalTempBounds.max}
+                        formatYLabel={formatTempAxisLabel}
+                        yTickCount={6}
+                      />
+
+                      <Text style={[styles.chartBlockTitleSpaced, { color: c.text }]}>血圧（mmHg）</Text>
+                      <SparseDualLineChart
+                        points={vitalBpPoints}
+                        width={vitalChartW}
+                        height={vitalChartH}
+                        lineColorA={bloodPressureSystolicColor}
+                        lineColorB={bloodPressureDiastolicColor}
+                        gridColor={c.border}
+                        axisLabelColor={c.textSecondary}
+                        minValue={vitalBpBounds.min}
+                        maxValue={vitalBpBounds.max}
+                        yTickCount={6}
+                        yTickSnap={1}
+                      />
+                      <View style={styles.chartLegendRow}>
+                        <View style={styles.chartLegendItem}>
+                          <View
+                            style={[styles.chartLegendSwatch, { backgroundColor: bloodPressureSystolicColor }]}
+                          />
+                          <Text style={[styles.chartLegendLabel, { color: c.textSecondary }]}>最高（収縮期）</Text>
+                        </View>
+                        <View style={styles.chartLegendItem}>
+                          <View
+                            style={[styles.chartLegendSwatch, { backgroundColor: bloodPressureDiastolicColor }]}
+                          />
+                          <Text style={[styles.chartLegendLabel, { color: c.textSecondary }]}>最低（拡張期）</Text>
+                        </View>
+                      </View>
+
+                      <Text style={[styles.chartBlockTitleSpaced, { color: c.text }]}>脈拍（回/分）</Text>
+                      <SparseLineChart
+                        points={vitalPulsePoints}
+                        width={vitalChartW}
+                        height={vitalChartH}
+                        lineColor={pulseLineColor}
+                        gridColor={c.border}
+                        axisLabelColor={c.textSecondary}
+                        minValue={vitalPulseBounds.min}
+                        maxValue={vitalPulseBounds.max}
+                        yTickCount={6}
+                        yTickSnap={1}
+                      />
+
+                      <Text style={[styles.chartBlockTitleSpaced, { color: c.text }]}>SpO₂（％）</Text>
+                      <SparseLineChart
+                        points={vitalSpo2Points}
+                        width={vitalChartW}
+                        height={vitalChartH}
+                        lineColor={spo2LineColor}
+                        gridColor={c.border}
+                        axisLabelColor={c.textSecondary}
+                        minValue={vitalSpo2Bounds.min}
+                        maxValue={vitalSpo2Bounds.max}
+                        yTickCount={6}
+                        yTickSnap={1}
+                        formatYLabel={(v) => `${Math.round(v)}`}
+                      />
+                    </>
+                  )}
+                </View>
+              ) : null}
+
               {loading && records.length === 0 ? (
                 <View style={styles.listLoading}>
                   <ActivityIndicator color={c.accent} />
@@ -410,6 +564,63 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
+  },
+  chartSection: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 16,
+    paddingHorizontal: VITAL_CHART_CARD_PAD_H,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  chartSub: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  chartEmptyNote: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 21,
+  },
+  chartBlockTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  chartBlockTitleSpaced: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  chartLegendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 18,
+    marginTop: 10,
+    marginBottom: 4,
+    alignItems: 'center',
+  },
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chartLegendSwatch: {
+    width: 22,
+    height: 4,
+    borderRadius: 2,
+  },
+  chartLegendLabel: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   sectionTitleRow: {
     flexDirection: 'row',

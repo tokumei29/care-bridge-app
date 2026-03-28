@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
+import { SimpleLineChart } from '@/components/charts/SimpleLineChart';
 import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -32,9 +33,16 @@ import {
   parseIsoToJapanDateTimeParts,
 } from '@/features/care-records/shared';
 import { formatSleepIntervalDurationJa } from '@/features/care-records/sleep/sleepDraft';
+import {
+  buildSleepMinutesLast7JapanDays,
+  formatSleepMinutesAxisLabel,
+} from '@/features/care-records/sleep/sleepWeekChartData';
 import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
+
+/** `styles.chartSection` の paddingHorizontal と一致（グラフの width はカード内側に合わせる） */
+const SLEEP_CHART_CARD_PAD_H = 14;
 
 function formatSleepCardHeadline(beddedAt: string, wokeAt: string): string {
   const d = new Date(beddedAt);
@@ -127,6 +135,15 @@ export function SleepRecordsListScreen() {
   const filteredRecords = useMemo(() => {
     return records.filter((r) => isRecordedAtOnJapanDate(r.bedded_at, filterDateKey));
   }, [records, filterDateKey]);
+
+  const sleepWeekLinePoints = useMemo(
+    () =>
+      buildSleepMinutesLast7JapanDays(records).map((p) => ({
+        value: p.totalMinutes,
+        xLabel: p.xLabel,
+      })),
+    [records]
+  );
 
   const goNew = useCallback(() => {
     router.push({
@@ -230,7 +247,7 @@ export function SleepRecordsListScreen() {
           ListHeaderComponent={
             <ContentRail layout={layout}>
               <Text style={[styles.lead, { color: c.textSecondary }]}>
-                {`${recipient.name}さんの睡眠の記録です（新しい順・日本時間）。表示する日付は「臥床した日」に合わせます。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの様子」です。赤い「問題、気になる点あり」は、施設やケアマネに相談したい記録として目立つようにしています。`}
+                {`${recipient.name}さんの睡眠の記録です（新しい順・日本時間）。夜間の本眠だけでなく、昼寝なども「臥床〜起床」で別レコードにすると、同じ日の記録として一覧・下の週グラフの「1日の合計」にすべて足し込まれます。表示する日付は「臥床した日」に合わせます。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの様子」です。赤い「問題、気になる点あり」は、施設やケアマネに相談したい記録として目立つようにしています。`}
               </Text>
               {!isSignedIn ? (
                 <View
@@ -260,6 +277,38 @@ export function SleepRecordsListScreen() {
                 </Text>
                 <MonthCalendar selectedKey={filterDateKey} onChangeKey={setFilterDateKey} />
               </View>
+
+              {isSignedIn ? (
+                <View
+                  style={[
+                    styles.chartSection,
+                    {
+                      borderColor: c.borderStrong,
+                      backgroundColor: c.surfaceSolid,
+                    },
+                  ]}>
+                  <Text style={[styles.chartTitle, { color: c.text }]}>直近7日間の1日あたり睡眠時間（合計）</Text>
+                  <Text style={[styles.chartSub, { color: c.textSecondary }]}>
+                    各日の値は、その日に「臥床した」記録すべての（起床−臥床）を足し合わせた1日の総睡眠時間です。夜間の睡眠に加え、昼寝なども別レコードで登録していれば同じ日にまとめて含まれます。今日を含む過去7暦日分です。
+                  </Text>
+                  <SimpleLineChart
+                    points={sleepWeekLinePoints}
+                    width={Math.max(1, layout.railInnerWidth - SLEEP_CHART_CARD_PAD_H * 2)}
+                    height={layout.isTablet ? 200 : 176}
+                    lineColor={c.accent}
+                    gridColor={c.border}
+                    axisLabelColor={c.textSecondary}
+                    fillUnderColor={
+                      scheme === 'dark' ? 'rgba(94, 184, 168, 0.11)' : 'rgba(45, 122, 110, 0.09)'
+                    }
+                    formatYLabel={formatSleepMinutesAxisLabel}
+                    minValue={0}
+                    yTickCount={7}
+                    yTickSnap={60}
+                  />
+                </View>
+              ) : null}
+
               {loading && records.length === 0 ? (
                 <View style={styles.listLoading}>
                   <ActivityIndicator color={c.accent} />
@@ -411,6 +460,25 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
+  },
+  chartSection: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 16,
+    paddingHorizontal: SLEEP_CHART_CARD_PAD_H,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  chartSub: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    marginBottom: 12,
   },
   sectionTitleRow: {
     flexDirection: 'row',
