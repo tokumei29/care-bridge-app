@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { CareRecipientsProvider } from '@/features/care-recipients';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -48,10 +49,15 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+      <CareRecipientsProvider>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="auth" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          {/* ヘッダーは care/[recipientId]/_layout の Stack に一本化（二重「戻る」防止） */}
+          <Stack.Screen name="care/[recipientId]" options={{ headerShown: false }} />
+        </Stack>
+      </CareRecipientsProvider>
     </ThemeProvider>
   );
 }

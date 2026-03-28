@@ -30,7 +30,16 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "被介護者の顔写真をカードに表示するため、写真ライブラリへアクセスします。",
+          "cameraPermission": "被介護者の写真を撮影するため、カメラを使用します。"
+        }
+      ],
+      "expo-image",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
