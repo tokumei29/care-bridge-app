@@ -18,12 +18,13 @@ export const AMOUNT_MIN = 0;
 export const AMOUNT_MAX = 10;
 
 /**
- * 送信前の確認（いずれか一方）。
- * Rails `meal_records.issue_status` の文字列と一致させること。
+ * そのときの食事の様子（いずれか一方）。入力ミスではなく、現場の観察用。
+ * Rails `meal_records.issue_status` の値 `ok` | `issue` と一致させること。
  */
 export type PreSubmitIssueStatus = 'ok' | 'issue';
 
+/** フォーム・一覧タグのラベル */
 export const PRE_SUBMIT_ISSUE_LABEL: Record<PreSubmitIssueStatus, string> = {
   ok: '問題なし',
-  issue: '問題あり',
+  issue: '問題、気になる点あり',
 };

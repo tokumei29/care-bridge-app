@@ -20,6 +20,6 @@ export type MealRecordWritePayload = {
   staple_amount: number;
   side_amount: number;
   water_ml: number | null;
-  memo: string;
+  memo: string | null;
   issue_status: string;
 };

@@ -86,6 +86,16 @@ export function isRecordedAtInJapanDayWindow(
   return t >= t0 && t <= t1;
 }
 
+/** `recorded_at` の日本時間の暦日が `dateKey` と一致するか（その日の記録すべて） */
+export function isRecordedAtOnJapanDate(recordedAtIso: string, dateKey: string): boolean {
+  try {
+    const parts = parseIsoToJapanDateTimeParts(recordedAtIso);
+    return parts.dateKey === dateKey;
+  } catch {
+    return false;
+  }
+}
+
 /** 一覧・詳細用の表示文字列（日本時間） */
 export function formatRecordedAtDisplayJa(iso: string): string {
   const d = new Date(iso);

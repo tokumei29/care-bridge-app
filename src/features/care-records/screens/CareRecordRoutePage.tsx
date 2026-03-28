@@ -10,6 +10,7 @@ import { useCareRecipients } from '@/features/care-recipients';
 import type { CareRecordRouteSegment } from '@/features/care-records/careRecordMenu';
 import { getCareRecordMenuItem } from '@/features/care-records/careRecordMenu';
 import { CareRecordStubScreen } from '@/features/care-records/screens/CareRecordStubScreen';
+import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
 
@@ -23,6 +24,7 @@ export function CareRecordRoutePage({ segment }: Props) {
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
+  useCareRecipientStackBackHeader(recipientId, c);
   const layout = useResponsiveLayout();
   const item = getCareRecordMenuItem(segment);
 

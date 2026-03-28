@@ -1,10 +1,22 @@
 import { StatusBar } from 'expo-status-bar';
+import { type Href } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
+import { useColorScheme } from '@/components/useColorScheme';
+import { useExplicitStackBackHeader } from '@/features/care-records/useExplicitStackBackHeader';
+import { getCareBridgeColors } from '@/theme/careBridge';
 
 export default function ModalScreen() {
+  const scheme = useColorScheme();
+  const c = getCareBridgeColors(scheme);
+  useExplicitStackBackHeader({
+    fallback: '/(tabs)' as Href,
+    tintColor: c.accent,
+    enabled: true,
+  });
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Modal</Text>

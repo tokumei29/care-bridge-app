@@ -7,6 +7,7 @@ export type CareRecordRouteSegment =
   | 'meals'
   | 'meals-new'
   | 'excretion'
+  | 'excretion-new'
   | 'vitals'
   | 'bathing'
   | 'rehab'
@@ -35,6 +36,7 @@ export const CARE_RECORD_PATHNAME: Record<CareRecordRouteSegment, string> = {
   meals: '/care/[recipientId]/meals',
   'meals-new': '/care/[recipientId]/meals/new',
   excretion: '/care/[recipientId]/excretion',
+  'excretion-new': '/care/[recipientId]/excretion/new',
   vitals: '/care/[recipientId]/vitals',
   bathing: '/care/[recipientId]/bathing',
   rehab: '/care/[recipientId]/rehab',
@@ -58,15 +60,15 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
       '食事のタイミング・主食・副食の量・水分・メモなどを入力して保存します。',
   },
   {
-    segment: 'excretion',
+    segment: 'excretion-new',
     menuSection: 'input',
-    title: '排泄',
-    subtitle: '記録を入力する',
-    symbol: { ios: 'toilet.fill', android: 'wc', web: 'wc' },
-    screenHeaderTitle: '排泄',
-    screenHeading: '排泄の記録',
+    title: '排泄の入力',
+    subtitle: '新しく記録を追加する',
+    symbol: { ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' },
+    screenHeaderTitle: '新しく記録',
+    screenHeading: '排泄の入力',
     screenDescription:
-      '排尿・排便の状態や回数、介助の有無などを入力・一覧表示できるようにします。',
+      '排尿・排便の有無と量、便の状態、メモなどを入力して保存します。',
   },
   {
     segment: 'vitals',
@@ -140,7 +142,18 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
     screenHeaderTitle: '食事の記録',
     screenHeading: '食事の記録一覧',
     screenDescription:
-      '過去の食事記録を日付や時間帯で絞り込んで一覧表示します。',
+      '過去の食事記録を日付で絞り込んで一覧表示します。',
+  },
+  {
+    segment: 'excretion',
+    menuSection: 'list',
+    title: '排泄の記録',
+    subtitle: '一覧で見る。各行から編集・削除',
+    symbol: { ios: 'list.bullet.rectangle.fill', android: 'list', web: 'list' },
+    screenHeaderTitle: '排泄の記録',
+    screenHeading: '排泄の記録一覧',
+    screenDescription:
+      '過去の排泄記録を日付で絞り込んで一覧表示します。',
   },
   {
     segment: 'pdf-export',

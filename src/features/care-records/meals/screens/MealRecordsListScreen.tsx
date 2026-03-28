@@ -1,5 +1,6 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -23,10 +24,8 @@ import { useCareRecipients } from '@/features/care-recipients';
 import {
   formatRecordedAtDisplayJa,
   getJapanNowParts,
-  isRecordedAtInJapanDayWindow,
+  isRecordedAtOnJapanDate,
   MonthCalendar,
-  pad2,
-  TimeWheelsRow,
 } from '@/features/care-records/shared';
 import {
   MEAL_SLOTS,
@@ -34,6 +33,7 @@ import {
   PRE_SUBMIT_ISSUE_LABEL,
   type MealSlotId,
 } from '@/features/care-records/meals/mealConstants';
+import { useCareRecipientStackBackHeader } from '@/features/care-records/useCareRecipientStackBackHeader';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
 
@@ -45,6 +45,7 @@ export function MealRecordsListScreen() {
   const mealRecordsApi = useMealRecordsApi();
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
+  useCareRecipientStackBackHeader(recipientId, c);
   const layout = useResponsiveLayout();
   const insets = useSafeAreaInsets();
 
@@ -54,11 +55,6 @@ export function MealRecordsListScreen() {
   const [listError, setListError] = useState<string | null>(null);
 
   const [filterDateKey, setFilterDateKey] = useState(() => getJapanNowParts().dateKey);
-  const [rangeStartHour, setRangeStartHour] = useState(0);
-  const [rangeStartMinute, setRangeStartMinute] = useState(0);
-  const [rangeEndHour, setRangeEndHour] = useState(23);
-  const [rangeEndMinute, setRangeEndMinute] = useState(59);
-  const [filterOpen, setFilterOpen] = useState(false);
 
   const recipient = recipientId ? getRecipientById(recipientId) : undefined;
 
@@ -106,21 +102,8 @@ export function MealRecordsListScreen() {
   }, [fetchList]);
 
   const filteredRecords = useMemo(() => {
-    return records.filter((r) =>
-      isRecordedAtInJapanDayWindow(
-        r.recorded_at,
-        filterDateKey,
-        rangeStartHour,
-        rangeStartMinute,
-        rangeEndHour,
-        rangeEndMinute
-      )
-    );
-  }, [records, filterDateKey, rangeStartHour, rangeStartMinute, rangeEndHour, rangeEndMinute]);
-
-  const rangeSummary = useMemo(() => {
-    return `${pad2(rangeStartHour)}:${pad2(rangeStartMinute)} 〜 ${pad2(rangeEndHour)}:${pad2(rangeEndMinute)}`;
-  }, [rangeEndHour, rangeEndMinute, rangeStartHour, rangeStartMinute]);
+    return records.filter((r) => isRecordedAtOnJapanDate(r.recorded_at, filterDateKey));
+  }, [records, filterDateKey]);
 
   const goNew = useCallback(() => {
     router.push({
@@ -187,10 +170,6 @@ export function MealRecordsListScreen() {
 
   const jumpToToday = useCallback(() => {
     setFilterDateKey(getJapanNowParts().dateKey);
-    setRangeStartHour(0);
-    setRangeStartMinute(0);
-    setRangeEndHour(23);
-    setRangeEndMinute(59);
   }, []);
 
   if (!isReady) {
@@ -228,7 +207,7 @@ export function MealRecordsListScreen() {
             ListHeaderComponent={
               <ContentRail layout={layout}>
                 <Text style={[styles.lead, { color: c.textSecondary }]}>
-                  {`${recipient.name}さんのこれまでの記録です（新しい順・日本時間）。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。`}
+                  {`${recipient.name}さんのこれまでの記録です（新しい順・日本時間）。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの食事の様子」です。赤い「問題、気になる点あり」（警告マーク付き）は、施設やケアマネに相談したい記録として目立つようにしています。`}
                 </Text>
                 {!isSignedIn ? (
                   <View
@@ -244,64 +223,19 @@ export function MealRecordsListScreen() {
                 ) : null}
 
                 <View style={styles.section}>
-                  <Pressable
-                    onPress={() => setFilterOpen((o) => !o)}
-                    style={({ pressed }) => [
-                      styles.filterToggle,
-                      {
-                        borderColor: c.borderStrong,
-                        backgroundColor: c.surfaceSolid,
-                        opacity: pressed ? 0.9 : 1,
-                      },
-                    ]}>
-                    <Text style={[styles.filterToggleText, { color: c.text }]}>
-                      {filterOpen ? '▼' : '▶'} 日付・時間帯で絞り込み
-                    </Text>
-                    <Text style={[styles.filterToggleSub, { color: c.textSecondary }]}>
-                      {filterDateKey} · {rangeSummary} ／ {filteredRecords.length} 件表示
-                    </Text>
-                  </Pressable>
-                  {filterOpen ? (
-                    <>
-                      <View style={styles.sectionTitleRow}>
-                        <Text style={[styles.sectionTitle, { color: c.text, marginTop: 14 }]}>
-                          表示する日付
-                        </Text>
-                        <Pressable onPress={jumpToToday} style={styles.todayLink}>
-                          <Text style={[styles.todayLinkText, { color: c.accent }]}>今日</Text>
-                        </Pressable>
-                      </View>
-                      <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-                        カレンダーで日付を選ぶと、その日の記録だけ一覧に残します。
-                      </Text>
-                      <MonthCalendar selectedKey={filterDateKey} onChangeKey={setFilterDateKey} />
-
-                      <Text style={[styles.sectionTitle, { color: c.text, marginTop: 18 }]}>
-                        表示する時間帯
-                      </Text>
-                      <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-                        その日の開始〜終了時刻に含まれる記録だけ表示します。
-                      </Text>
-                      <Text style={[styles.rangeLabel, { color: c.text }]}>開始</Text>
-                      <TimeWheelsRow
-                        hour={rangeStartHour}
-                        minute={rangeStartMinute}
-                        onHourChange={setRangeStartHour}
-                        onMinuteChange={setRangeStartMinute}
-                        layout={layout}
-                        c={c}
-                      />
-                      <Text style={[styles.rangeLabel, { color: c.text, marginTop: 14 }]}>終了</Text>
-                      <TimeWheelsRow
-                        hour={rangeEndHour}
-                        minute={rangeEndMinute}
-                        onHourChange={setRangeEndHour}
-                        onMinuteChange={setRangeEndMinute}
-                        layout={layout}
-                        c={c}
-                      />
-                    </>
-                  ) : null}
+                  <View style={styles.sectionTitleRow}>
+                    <Text style={[styles.sectionTitle, { color: c.text }]}>表示する日付</Text>
+                    <Pressable onPress={jumpToToday} style={styles.todayLink}>
+                      <Text style={[styles.todayLinkText, { color: c.accent }]}>今日</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
+                    開いたときは今日（日本時間）の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
+                  </Text>
+                  <Text style={[styles.dateFilterSummary, { color: c.textSecondary }]}>
+                    {filterDateKey} ／ {filteredRecords.length} 件表示
+                  </Text>
+                  <MonthCalendar selectedKey={filterDateKey} onChangeKey={setFilterDateKey} />
                 </View>
                 {loading && records.length === 0 ? (
                   <View style={styles.listLoading}>
@@ -322,7 +256,7 @@ export function MealRecordsListScreen() {
                 filteredRecords.length === 0 &&
                 isSignedIn ? (
                   <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                    この日・この時間帯に該当する記録はありません。日付や時間帯を変えてみてください。
+                    この日の記録はありません。カレンダーで別の日を選ぶか、新規で追加してください。
                   </Text>
                 ) : null}
               </ContentRail>
@@ -364,15 +298,26 @@ export function MealRecordsListScreen() {
                               item.issue_status === 'issue' ? c.dangerMuted : c.accentMuted,
                           },
                         ]}>
-                        <Text
-                          style={[
-                            styles.tagText,
-                            {
-                              color: item.issue_status === 'issue' ? c.danger : c.accent,
-                            },
-                          ]}>
-                          {issueLabel}
-                        </Text>
+                        <View style={styles.tagRow}>
+                          <SymbolView
+                            name={
+                              item.issue_status === 'issue'
+                                ? { ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }
+                                : { ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }
+                            }
+                            tintColor={item.issue_status === 'issue' ? c.danger : c.accent}
+                            size={16}
+                          />
+                          <Text
+                            style={[
+                              styles.tagText,
+                              {
+                                color: item.issue_status === 'issue' ? c.danger : c.accent,
+                              },
+                            ]}>
+                            {issueLabel}
+                          </Text>
+                        </View>
                       </View>
                     </View>
                     {item.memo ? (
@@ -472,30 +417,13 @@ const styles = StyleSheet.create({
   sectionSub: {
     fontSize: 13,
     fontWeight: '600',
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  dateFilterSummary: {
+    fontSize: 14,
+    fontWeight: '700',
     marginBottom: 12,
-    lineHeight: 18,
-  },
-  filterToggle: {
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 4,
-  },
-  filterToggleText: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  filterToggleSub: {
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  rangeLabel: {
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 8,
   },
   listLoading: {
     paddingVertical: 24,
@@ -542,12 +470,19 @@ const styles = StyleSheet.create({
   },
   tag: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 10,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
   },
   tagText: {
     fontSize: 12,
     fontWeight: '800',
+    flexShrink: 1,
   },
   cardMemo: {
     fontSize: 13,

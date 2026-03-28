@@ -1,4 +1,5 @@
 import type { MealRecordRecord, MealRecordWritePayload } from '@/api/types/mealRecord';
+import { CARE_RECORD_MEMO_MAX_LENGTH } from '@/features/care-records/shared/memoLimits';
 import {
   buildRecordedAtIsoInJapan,
   getJapanNowParts,
@@ -58,7 +59,7 @@ export function mealRecordToDraft(record: MealRecordRecord): MealRecordDraft {
     stapleAmount: record.staple_amount,
     sideAmount: record.side_amount,
     waterMl: water === null || water === undefined ? '' : String(water),
-    memo: record.memo ?? '',
+    memo: (record.memo ?? '').slice(0, CARE_RECORD_MEMO_MAX_LENGTH),
     preSubmitIssue: asPreSubmitIssueStatus(record.issue_status),
   };
 }
@@ -69,13 +70,14 @@ export function draftToWritePayload(draft: MealRecordDraft): MealRecordWritePayl
   const water_ml =
     waterParsed === null || Number.isNaN(waterParsed) ? null : waterParsed;
   const isSnack = draft.mealSlot === 'snack';
+  const memoTrim = draft.memo.trim().slice(0, CARE_RECORD_MEMO_MAX_LENGTH);
   return {
     recorded_at: buildRecordedAtIsoInJapan(draft.dateKey, draft.hour, draft.minute),
     meal_slot: draft.mealSlot,
     staple_amount: isSnack ? 0 : draft.stapleAmount,
     side_amount: isSnack ? 0 : draft.sideAmount,
     water_ml,
-    memo: draft.memo.trim(),
+    memo: memoTrim === '' ? null : memoTrim,
     issue_status: draft.preSubmitIssue,
   };
 }
@@ -97,7 +99,7 @@ export function buildMealSummaryText(draft: MealRecordDraft, recipientName: stri
   }
   lines.push(
     `水分量: ${ml}`,
-    `送信前の確認: ${PRE_SUBMIT_ISSUE_LABEL[draft.preSubmitIssue]}`,
+    `そのときの様子: ${PRE_SUBMIT_ISSUE_LABEL[draft.preSubmitIssue]}`,
     draft.memo.trim() ? `メモ: ${draft.memo.trim()}` : 'メモ: （なし）'
   );
   return lines.join('\n');

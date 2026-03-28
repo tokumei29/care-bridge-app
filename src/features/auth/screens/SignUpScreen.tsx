@@ -18,6 +18,7 @@ import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useCareRecipients } from '@/features/care-recipients';
+import { useExplicitStackBackHeader } from '@/features/care-records/useExplicitStackBackHeader';
 import { supabase } from '@/lib/supabase';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
@@ -32,6 +33,7 @@ export function SignUpScreen() {
   }, [isReady, isSignedIn, router]);
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
+  useExplicitStackBackHeader({ fallback: '/auth/login' as Href, tintColor: c.accent });
   const layout = useResponsiveLayout();
   const insets = useSafeAreaInsets();
 

@@ -1,34 +1,40 @@
 import { SymbolView } from 'expo-symbols';
-import React, { useCallback, type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import { ContentRail } from '@/components/layout/ContentRail';
-import { AmountScaleRow } from '@/features/care-records/meals/components/AmountScaleRow';
 import { CARE_RECORD_MEMO_MAX_LENGTH, MonthCalendar, TimeWheelsRow } from '@/features/care-records/shared';
-import type { MealRecordDraft } from '@/features/care-records/meals/mealDraft';
+import type { ExcretionRecordDraft } from '@/features/care-records/excretion/excretionDraft';
 import {
-  MEAL_SLOTS,
-  MEAL_SLOT_LABEL,
+  DEFECATION_AMOUNTS,
+  DEFECATION_AMOUNT_LABEL,
+  DEFECATION_PRESENCE,
+  DEFECATION_PRESENCE_LABEL,
   PRE_SUBMIT_ISSUE_LABEL,
-  type PreSubmitIssueStatus,
-} from '@/features/care-records/meals/mealConstants';
+  STOOL_CONDITIONS,
+  STOOL_CONDITION_LABEL,
+  URINATION_AMOUNTS,
+  URINATION_AMOUNT_LABEL,
+  URINATION_PRESENCE,
+  URINATION_PRESENCE_LABEL,
+} from '@/features/care-records/excretion/excretionConstants';
+import type { PreSubmitIssueStatus } from '@/features/care-records/meals/mealConstants';
 import type { ResponsiveLayout } from '@/lib/useResponsiveLayout';
 import type { CareBridgeColors } from '@/theme/careBridge';
 
 type Props = {
   recipientName: string;
   isSignedIn: boolean;
-  draft: MealRecordDraft;
-  setDraft: React.Dispatch<React.SetStateAction<MealRecordDraft>>;
+  draft: ExcretionRecordDraft;
+  setDraft: React.Dispatch<React.SetStateAction<ExcretionRecordDraft>>;
   layout: ResponsiveLayout;
   c: CareBridgeColors;
   bottomPadding: number;
-  /** フォーム末尾（送信ボタンなど） */
   footer?: ReactNode;
 };
 
-export function MealRecordFormBody({
+export function ExcretionRecordFormBody({
   recipientName,
   isSignedIn,
   draft,
@@ -38,15 +44,8 @@ export function MealRecordFormBody({
   bottomPadding,
   footer,
 }: Props) {
-  const onWaterChange = useCallback(
-    (t: string) => {
-      const digits = t.replace(/\D/g, '');
-      setDraft((d) => ({ ...d, waterMl: digits }));
-    },
-    [setDraft]
-  );
-
-  const isSnack = draft.mealSlot === 'snack';
+  const showUrinationAmount = draft.urinationPresence === 'present';
+  const showDefecationFields = draft.defecationPresence === 'present';
 
   return (
     <ScrollView
@@ -56,9 +55,7 @@ export function MealRecordFormBody({
       contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}>
       <ContentRail layout={layout}>
         <Text style={[styles.lead, { color: c.textSecondary }]}>
-          {isSnack
-            ? `${recipientName}さんの間食を記録します。日付・時刻を選んだあと、メモに食べたものや様子を書いてください（主食・副食の量は表示しません）。`
-            : `${recipientName}さんの食事を記録します。まず「いつの記録か」の日付・時刻（日本時間）を選び、そのあと食事の内容を入力してください。`}
+          {`${recipientName}さんの排泄を記録します。日付・時刻（日本時間）を選び、排尿・排便の有無と量、便の状態、メモを入力してください。`}
         </Text>
 
         {!isSignedIn ? (
@@ -73,7 +70,7 @@ export function MealRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            いつの食事か（日本時間）。初期値は今日です。
+            いつの記録か（日本時間）。初期値は今日です。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -84,7 +81,7 @@ export function MealRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            食事のおおよその時刻（日本時間）。初期値は現在時刻です。
+            おおよその時刻（日本時間）。初期値は現在時刻です。
           </Text>
           <TimeWheelsRow
             hour={draft.hour}
@@ -97,24 +94,31 @@ export function MealRecordFormBody({
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: c.text }]}>食事のタイミング</Text>
-          <View style={styles.slotRow}>
-            {MEAL_SLOTS.map((id) => {
-              const on = draft.mealSlot === id;
+          <Text style={[styles.sectionTitle, { color: c.text }]}>排尿</Text>
+          <Text style={[styles.sectionSub, { color: c.textSecondary }]}>あり / なし</Text>
+          <View style={styles.chipRow}>
+            {URINATION_PRESENCE.map((id) => {
+              const on = draft.urinationPresence === id;
               return (
                 <Pressable
                   key={id}
-                  onPress={() => setDraft((d) => ({ ...d, mealSlot: id }))}
+                  onPress={() =>
+                    setDraft((d) => ({
+                      ...d,
+                      urinationPresence: id,
+                      urinationAmount: id === 'present' ? (d.urinationAmount ?? 'normal') : null,
+                    }))
+                  }
                   style={({ pressed }) => [
-                    styles.slotChip,
+                    styles.chip,
                     {
                       borderColor: on ? c.accent : c.borderStrong,
                       backgroundColor: on ? c.accentMuted : c.surfaceSolid,
                       opacity: pressed ? 0.88 : 1,
                     },
                   ]}>
-                  <Text style={[styles.slotLabel, { color: on ? c.accent : c.text }]}>
-                    {MEAL_SLOT_LABEL[id]}
+                  <Text style={[styles.chipLabel, { color: on ? c.accent : c.text }]}>
+                    {URINATION_PRESENCE_LABEL[id]}
                   </Text>
                 </Pressable>
               );
@@ -122,61 +126,135 @@ export function MealRecordFormBody({
           </View>
         </View>
 
-        {!isSnack ? (
+        {showUrinationAmount ? (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>排尿の量</Text>
+            <View style={styles.chipRow}>
+              {URINATION_AMOUNTS.map((id) => {
+                const on = draft.urinationAmount === id;
+                return (
+                  <Pressable
+                    key={id}
+                    onPress={() => setDraft((d) => ({ ...d, urinationAmount: id }))}
+                    style={({ pressed }) => [
+                      styles.chip,
+                      {
+                        borderColor: on ? c.accent : c.borderStrong,
+                        backgroundColor: on ? c.accentMuted : c.surfaceSolid,
+                        opacity: pressed ? 0.88 : 1,
+                      },
+                    ]}>
+                    <Text style={[styles.chipLabel, { color: on ? c.accent : c.text }]}>
+                      {URINATION_AMOUNT_LABEL[id]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: c.text }]}>排便</Text>
+          <Text style={[styles.sectionSub, { color: c.textSecondary }]}>あり / なし</Text>
+          <View style={styles.chipRow}>
+            {DEFECATION_PRESENCE.map((id) => {
+              const on = draft.defecationPresence === id;
+              return (
+                <Pressable
+                  key={id}
+                  onPress={() =>
+                    setDraft((d) => ({
+                      ...d,
+                      defecationPresence: id,
+                      defecationAmount: id === 'present' ? (d.defecationAmount ?? 'palm_full') : null,
+                      stoolCondition: id === 'present' ? (d.stoolCondition ?? 'normal') : null,
+                    }))
+                  }
+                  style={({ pressed }) => [
+                    styles.chip,
+                    {
+                      borderColor: on ? c.accent : c.borderStrong,
+                      backgroundColor: on ? c.accentMuted : c.surfaceSolid,
+                      opacity: pressed ? 0.88 : 1,
+                    },
+                  ]}>
+                  <Text style={[styles.chipLabel, { color: on ? c.accent : c.text }]}>
+                    {DEFECATION_PRESENCE_LABEL[id]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {showDefecationFields ? (
           <>
-            <View style={[styles.section, styles.cardPad, { borderColor: c.borderStrong }]}>
-              <AmountScaleRow
-                label="主食（ご飯など）"
-                value={draft.stapleAmount}
-                onChange={(stapleAmount) => setDraft((d) => ({ ...d, stapleAmount }))}
-              />
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>排便の量</Text>
+              <View style={styles.chipRow}>
+                {DEFECATION_AMOUNTS.map((id) => {
+                  const on = draft.defecationAmount === id;
+                  return (
+                    <Pressable
+                      key={id}
+                      onPress={() => setDraft((d) => ({ ...d, defecationAmount: id }))}
+                      style={({ pressed }) => [
+                        styles.chip,
+                        {
+                          borderColor: on ? c.accent : c.borderStrong,
+                          backgroundColor: on ? c.accentMuted : c.surfaceSolid,
+                          opacity: pressed ? 0.88 : 1,
+                        },
+                      ]}>
+                      <Text style={[styles.chipLabel, { color: on ? c.accent : c.text }]}>
+                        {DEFECATION_AMOUNT_LABEL[id]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
 
-            <View style={[styles.section, styles.cardPad, { borderColor: c.borderStrong }]}>
-              <AmountScaleRow
-                label="副食（おかずなど）"
-                value={draft.sideAmount}
-                onChange={(sideAmount) => setDraft((d) => ({ ...d, sideAmount }))}
-              />
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>便の状態</Text>
+              <View style={styles.chipRow}>
+                {STOOL_CONDITIONS.map((id) => {
+                  const on = draft.stoolCondition === id;
+                  return (
+                    <Pressable
+                      key={id}
+                      onPress={() => setDraft((d) => ({ ...d, stoolCondition: id }))}
+                      style={({ pressed }) => [
+                        styles.chip,
+                        {
+                          borderColor: on ? c.accent : c.borderStrong,
+                          backgroundColor: on ? c.accentMuted : c.surfaceSolid,
+                          opacity: pressed ? 0.88 : 1,
+                        },
+                      ]}>
+                      <Text style={[styles.chipLabel, { color: on ? c.accent : c.text }]}>
+                        {STOOL_CONDITION_LABEL[id]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
           </>
         ) : null}
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: c.text }]}>水分量</Text>
-          <Text style={[styles.sectionSub, { color: c.textSecondary }]}>ミリリットル（ml）</Text>
-          <View style={[styles.mlRow, { borderColor: c.borderStrong, backgroundColor: c.surfaceSolid }]}>
-            <TextInput
-              value={draft.waterMl}
-              onChangeText={onWaterChange}
-              placeholder="例: 150"
-              placeholderTextColor={c.textSecondary}
-              keyboardType="number-pad"
-              style={[styles.mlInput, { color: c.text }]}
-            />
-            <Text style={[styles.mlUnit, { color: c.textSecondary }]}>ml</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>メモ</Text>
-          {isSnack ? (
-            <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-              食べたものや様子を入力してください（{CARE_RECORD_MEMO_MAX_LENGTH}文字以内・任意）。
-            </Text>
-          ) : (
-            <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-              気になったこと、メニュー名など（{CARE_RECORD_MEMO_MAX_LENGTH}文字以内・任意）
-            </Text>
-          )}
+          <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
+            気になったことなど（{CARE_RECORD_MEMO_MAX_LENGTH}文字以内・任意）
+          </Text>
           <TextInput
             value={draft.memo}
             onChangeText={(memo) =>
               setDraft((d) => ({ ...d, memo: memo.slice(0, CARE_RECORD_MEMO_MAX_LENGTH) }))
             }
-            placeholder={
-              isSnack ? '例: ヨーグルト1個、お茶菓子を少し、よく噛んで食べた など' : '気になったこと、メニュー名など'
-            }
+            placeholder="例: トイレまで見守り、自力で着席できた など"
             placeholderTextColor={c.textSecondary}
             multiline
             maxLength={CARE_RECORD_MEMO_MAX_LENGTH}
@@ -192,9 +270,9 @@ export function MealRecordFormBody({
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: c.text }]}>そのときの食事の様子</Text>
+          <Text style={[styles.sectionTitle, { color: c.text }]}>そのときの排泄の様子</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            むせ・誤嚥、食欲の変化など、気になることがあれば「問題、気になる点あり」を選んでください。一覧で分かるよう表示され、施設やケアマネへの相談の目印にできます。
+            排便の異常、トイレでの不安定さなど、気になることがあれば「問題、気になる点あり」を選んでください。一覧で分かるよう表示され、施設やケアマネへの相談の目印にできます。
           </Text>
           <View
             style={[styles.preCheckWrap, { borderColor: c.borderStrong, backgroundColor: c.surfaceSolid }]}
@@ -287,44 +365,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     lineHeight: 18,
   },
-  slotRow: {
+  chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
   },
-  slotChip: {
+  chip: {
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  slotLabel: {
+  chipLabel: {
     fontSize: 15,
     fontWeight: '800',
-  },
-  cardPad: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 16,
-    padding: 14,
-  },
-  mlRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 14,
-    minHeight: 48,
-  },
-  mlInput: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    paddingVertical: 10,
-    fontVariant: ['tabular-nums'],
-  },
-  mlUnit: {
-    fontSize: 16,
-    fontWeight: '700',
   },
   memoInput: {
     minHeight: 100,

@@ -1,3 +1,4 @@
+export { CARE_RECORD_MEMO_MAX_LENGTH } from './memoLimits';
 export { MonthCalendar } from './MonthCalendar';
 export { ScrollPickerColumn } from './ScrollPickerColumn';
 export { TimeWheelsRow, TIME_WHEEL_HOUR_LABELS, TIME_WHEEL_MINUTE_LABELS } from './TimeWheelsRow';
@@ -8,6 +9,7 @@ export {
   formatRecordedAtDisplayJa,
   getJapanNowParts,
   isRecordedAtInJapanDayWindow,
+  isRecordedAtOnJapanDate,
   isValidJapanDate,
   japanDateKeyFromParts,
   japanWeekdaySun0,
