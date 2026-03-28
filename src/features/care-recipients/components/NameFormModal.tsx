@@ -19,6 +19,7 @@ import { Text } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import { MAX_NAME_LENGTH } from '@/features/care-recipients/constants';
 import type { RecipientAvatarSubmit } from '@/features/care-recipients/types';
+import { useAvatarDisplayUri } from '@/lib/useAvatarDisplayUri';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
 import { ctaGradient } from '@/theme/gradients';
@@ -82,8 +83,12 @@ export function NameFormModal({
     }
   }, [visible, initialName, initialAvatarUrl]);
 
-  const displayUri = stagedPickUri ?? (cleared ? null : originalPersistedUri);
-  const previewSize = layout.isTablet ? 96 : 80;
+  const remotePreviewInput = stagedPickUri || cleared ? null : originalPersistedUri;
+  const resolvedRemote = useAvatarDisplayUri(remotePreviewInput);
+  const displayUri = stagedPickUri ?? (cleared ? null : resolvedRemote);
+  const isTablet = layout.isTablet;
+  const previewCap = isTablet ? 168 : 144;
+  const previewSize = Math.min(previewCap, Math.max(112, Math.round(layout.railInnerWidth * 0.42)));
 
   const handleSubmit = () => {
     const avatar = buildAvatarPayload(mode, stagedPickUri, cleared, originalPersistedUri);
@@ -102,8 +107,9 @@ export function NameFormModal({
       aspect: [1, 1],
       quality: 0.88,
     });
-    if (!result.canceled && result.assets[0]?.uri) {
-      setStagedPickUri(result.assets[0].uri);
+    const asset = result.assets?.[0];
+    if (!result.canceled && asset?.uri) {
+      setStagedPickUri(asset.uri);
       setCleared(false);
     }
   };
@@ -119,8 +125,9 @@ export function NameFormModal({
       aspect: [1, 1],
       quality: 0.88,
     });
-    if (!result.canceled && result.assets[0]?.uri) {
-      setStagedPickUri(result.assets[0].uri);
+    const asset = result.assets?.[0];
+    if (!result.canceled && asset?.uri) {
+      setStagedPickUri(asset.uri);
       setCleared(false);
     }
   };
@@ -130,8 +137,7 @@ export function NameFormModal({
     setCleared(true);
   };
 
-  const sheetMaxWidth = layout.isTablet ? 440 : undefined;
-  const isTablet = layout.isTablet;
+  const sheetMaxWidth = layout.isTablet ? 480 : undefined;
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
@@ -178,7 +184,10 @@ export function NameFormModal({
                 </Text>
 
                 <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>顔写真（任意）</Text>
-                <View style={styles.avatarRow}>
+                <Text style={[styles.avatarHint, { color: c.textSecondary }]}>
+                  お顔がはっきり分かる写真だと、一覧や記録トップで見分けやすくなります。
+                </Text>
+                <View style={styles.avatarSection}>
                   <View
                     style={[
                       styles.avatarPreview,
@@ -319,7 +328,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sheetRailTablet: {
-    maxWidth: 440,
+    maxWidth: 480,
     alignSelf: 'center',
   },
   sheet: {
@@ -342,14 +351,18 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '700',
-    marginBottom: 10,
+    marginBottom: 6,
     letterSpacing: 0.3,
   },
-  avatarRow: {
-    flexDirection: 'row',
+  avatarHint: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '500',
+    marginBottom: 14,
+  },
+  avatarSection: {
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   avatarPreview: {
     borderWidth: 2,
@@ -358,14 +371,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   avatarPlaceholder: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   avatarActions: {
-    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 8,
+    marginTop: 14,
+    width: '100%',
   },
   chip: {
     paddingVertical: 10,

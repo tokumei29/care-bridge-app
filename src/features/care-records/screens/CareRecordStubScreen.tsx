@@ -10,6 +10,7 @@ import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useCareRecipients } from '@/features/care-recipients';
+import { useAvatarDisplayUri } from '@/lib/useAvatarDisplayUri';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
 import { heroShineGradient } from '@/theme/gradients';
@@ -37,6 +38,7 @@ export function CareRecordStubScreen({
   const layout = useResponsiveLayout();
   const { getRecipientById } = useCareRecipients();
   const recipient = getRecipientById(recipientId);
+  const avatarDisplayUri = useAvatarDisplayUri(recipient?.avatarUrl);
 
   return (
     <ScreenBackdrop>
@@ -44,9 +46,9 @@ export function CareRecordStubScreen({
         <Stack.Screen options={{ title: headerTitle }} />
         <ContentRail layout={layout}>
           <View style={[styles.body, layout.isTablet && styles.bodyTablet]}>
-            {recipient?.avatarUrl ? (
+            {avatarDisplayUri ? (
               <Image
-                source={{ uri: recipient.avatarUrl }}
+                source={{ uri: avatarDisplayUri }}
                 style={[
                   styles.avatar,
                   { width: layout.isTablet ? 72 : 64, height: layout.isTablet ? 72 : 64 },

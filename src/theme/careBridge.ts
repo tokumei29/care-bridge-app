@@ -46,5 +46,14 @@ export type CareBridgeColors = (typeof careBridge)[keyof typeof careBridge];
 
 export function getCareBridgeColors(scheme: ColorSchemeName | null | undefined): CareBridgeColors {
   const key = scheme === 'dark' ? 'dark' : 'light';
-  return careBridge[key];
+  const base = careBridge[key];
+  return {
+    ...base,
+    text: base.text ?? (key === 'dark' ? '#eef4f1' : '#1c2422'),
+    textSecondary: base.textSecondary ?? (key === 'dark' ? '#9cada7' : '#5c6d68'),
+    accent: base.accent ?? (key === 'dark' ? '#5eb8a8' : '#2d7a6e'),
+    accentSecondary: base.accentSecondary ?? (key === 'dark' ? '#7fd4c4' : '#3d9a88'),
+    accentMuted: base.accentMuted ?? (key === 'dark' ? 'rgba(94, 184, 168, 0.18)' : 'rgba(45, 122, 110, 0.14)'),
+    danger: base.danger ?? (key === 'dark' ? '#e07070' : '#c43d3d'),
+  } as CareBridgeColors;
 }

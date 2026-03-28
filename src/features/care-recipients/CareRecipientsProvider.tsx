@@ -42,13 +42,26 @@ type CareRecipientsContextValue = {
 
 const CareRecipientsContext = createContext<CareRecipientsContextValue | null>(null);
 
-function mapRecord(r: CareRecipientRecord): CareRecipient {
+function normalizeCareRecipient(r: CareRecipientRecord): CareRecipient | null {
+  if (r.id == null) return null;
+  const id = String(r.id).trim();
+  if (!id) return null;
+  const rawAvatar = r.avatar_url;
+  const avatarUrl =
+    typeof rawAvatar === 'string' && rawAvatar.trim() !== '' ? rawAvatar.trim() : null;
+
   return {
-    id: r.id,
+    id,
     name: r.name,
     createdAt: r.created_at,
-    avatarUrl: r.avatar_url,
+    avatarUrl,
   };
+}
+
+function recipientsFromRecords(list: CareRecipientRecord[]): CareRecipient[] {
+  return sortRecipients(
+    list.map(normalizeCareRecipient).filter((x): x is CareRecipient => x != null)
+  );
 }
 
 function sortRecipients(list: CareRecipient[]): CareRecipient[] {
@@ -103,7 +116,7 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
     }
     try {
       const list = await api.list();
-      setRecipients(sortRecipients(list.map(mapRecord)));
+      setRecipients(recipientsFromRecords(list));
       setIsSignedIn(true);
     } catch (e) {
       if (isApiError(e) && e.status === 401) {
@@ -119,7 +132,7 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
       void (async () => {
         try {
           const list = await api.list();
-          setRecipients(sortRecipients(list.map(mapRecord)));
+          setRecipients(recipientsFromRecords(list));
           setIsSignedIn(true);
         } catch (e) {
           if (__DEV__) console.error(e);
@@ -157,7 +170,7 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
       try {
         const list = await api.list();
         if (!cancelled) {
-          setRecipients(sortRecipients(list.map(mapRecord)));
+          setRecipients(recipientsFromRecords(list));
           setIsSignedIn(true);
         }
       } catch (e) {
@@ -217,22 +230,31 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
 
       try {
         const created = await api.create({ name: v.name, avatar_url: null });
+        const createdNorm = normalizeCareRecipient(created);
+        if (!createdNorm) {
+          return { ok: false, reason: 'サーバー応答に ID がありません。しばらくしてから再度お試しください。' };
+        }
 
         let avatarUrl: string | null = created.avatar_url;
         if (avatar.mode === 'picked') {
           try {
-            avatarUrl = await uploadRecipientAvatarToSupabase(avatar.tempUri, created.id);
-            const updated = await api.update(created.id, { name: v.name, avatar_url: avatarUrl });
+            avatarUrl = await uploadRecipientAvatarToSupabase(avatar.tempUri, createdNorm.id);
+            const updated = await api.update(createdNorm.id, { name: v.name, avatar_url: avatarUrl });
+            const updatedNorm = normalizeCareRecipient(updated);
+            if (!updatedNorm) {
+              await refreshRecipients();
+              return { ok: false, reason: '更新後のデータを読み取れませんでした。一覧を確認してください。' };
+            }
             setRecipients((prev) =>
-              sortRecipients([...prev.filter((r) => r.id !== updated.id), mapRecord(updated)])
+              sortRecipients([...prev.filter((r) => r.id !== updatedNorm.id), updatedNorm])
             );
           } catch (e) {
-            await api.destroy(created.id).catch(() => {});
-            await removeRecipientAvatarFromSupabase(created.id).catch(() => {});
+            await api.destroy(createdNorm.id).catch(() => {});
+            await removeRecipientAvatarFromSupabase(createdNorm.id).catch(() => {});
             return { ok: false, reason: errorReason(e, '写真のアップロードに失敗しました。') };
           }
         } else {
-          setRecipients((prev) => sortRecipients([...prev, mapRecord(created)]));
+          setRecipients((prev) => sortRecipients([...prev, createdNorm]));
         }
 
         return { ok: true };
@@ -240,7 +262,7 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
         return { ok: false, reason: errorReason(e, '登録に失敗しました。') };
       }
     },
-    [api, recipients.length]
+    [api, recipients.length, refreshRecipients]
   );
 
   const updateRecipient = useCallback(
@@ -269,15 +291,20 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
         }
 
         const updated = await api.update(id, { name: v.name, avatar_url: avatarUrl });
+        const updatedNorm = normalizeCareRecipient(updated);
+        if (!updatedNorm) {
+          await refreshRecipients();
+          return { ok: false, reason: '更新後のデータを読み取れませんでした。一覧を確認してください。' };
+        }
         setRecipients((prev) =>
-          sortRecipients(prev.map((r) => (r.id === id ? mapRecord(updated) : r)))
+          sortRecipients(prev.map((r) => (r.id === id ? updatedNorm : r)))
         );
         return { ok: true };
       } catch (e) {
         return { ok: false, reason: errorReason(e, '更新に失敗しました。') };
       }
     },
-    [api, recipients]
+    [api, recipients, refreshRecipients]
   );
 
   const removeRecipient = useCallback(

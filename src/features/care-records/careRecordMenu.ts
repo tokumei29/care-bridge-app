@@ -11,16 +11,21 @@ export type CareRecordRouteSegment =
   | 'vitals'
   | 'vitals-new'
   | 'bathing'
+  | 'bathing-new'
   | 'rehab'
+  | 'rehab-new'
   | 'sleep'
+  | 'sleep-new'
   | 'notes'
+  | 'notes-new'
   | 'image-memos'
+  | 'image-memos-new'
   | 'pdf-export';
 
 export type CareRecordMenuItem = {
   segment: CareRecordRouteSegment;
-  /** 被介護者トップのセクション分け: 入力系 / 一覧・PDF など */
-  menuSection: 'input' | 'list';
+  /** 被介護者トップのセクション分け: 入力 / 一覧・編集 / その他（PDF など） */
+  menuSection: 'input' | 'list' | 'other';
   title: string;
   subtitle: string;
   symbol: { ios: string; android: string; web: string };
@@ -41,10 +46,15 @@ export const CARE_RECORD_PATHNAME: Record<CareRecordRouteSegment, string> = {
   vitals: '/care/[recipientId]/vitals',
   'vitals-new': '/care/[recipientId]/vitals/new',
   bathing: '/care/[recipientId]/bathing',
+  'bathing-new': '/care/[recipientId]/bathing/new',
   rehab: '/care/[recipientId]/rehab',
+  'rehab-new': '/care/[recipientId]/rehab/new',
   sleep: '/care/[recipientId]/sleep',
+  'sleep-new': '/care/[recipientId]/sleep/new',
   notes: '/care/[recipientId]/notes',
+  'notes-new': '/care/[recipientId]/notes/new',
   'image-memos': '/care/[recipientId]/image-memos',
+  'image-memos-new': '/care/[recipientId]/image-memos/new',
   'pdf-export': '/care/[recipientId]/pdf-export',
 };
 
@@ -84,56 +94,59 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
       '体温・血圧（最高・最低）・脈拍・SpO₂・メモなどを入力して保存します。',
   },
   {
-    segment: 'bathing',
+    segment: 'bathing-new',
     menuSection: 'input',
-    title: '入浴',
-    subtitle: '記録を入力する',
-    symbol: { ios: 'shower.fill', android: 'bathtub', web: 'bathtub' },
-    screenHeaderTitle: '入浴',
-    screenHeading: '入浴の記録',
-    screenDescription: '入浴の有無・方法・介助内容などを記録・一覧できるようにします。',
-  },
-  {
-    segment: 'rehab',
-    menuSection: 'input',
-    title: 'リハビリ運動',
-    subtitle: '記録を入力する',
-    symbol: { ios: 'figure.run', android: 'directions_run', web: 'directions_run' },
-    screenHeaderTitle: 'リハビリ',
-    screenHeading: 'リハビリ・運動の記録',
-    screenDescription: '運動内容・時間・負担の程度などを入力し、経過を振り返れるようにします。',
-  },
-  {
-    segment: 'sleep',
-    menuSection: 'input',
-    title: '睡眠',
-    subtitle: '記録を入力する',
-    symbol: { ios: 'moon.zzz.fill', android: 'bedtime', web: 'bedtime' },
-    screenHeaderTitle: '睡眠',
-    screenHeading: '睡眠の記録',
-    screenDescription: '就寝・起床時刻や眠りの深さ、日中の眠気などを記録・一覧できるようにします。',
-  },
-  {
-    segment: 'notes',
-    menuSection: 'input',
-    title: 'その他の気づき',
-    subtitle: '自由にメモを入力する',
-    symbol: { ios: 'lightbulb.fill', android: 'lightbulb', web: 'lightbulb' },
-    screenHeaderTitle: '気づき',
-    screenHeading: 'その他の気づき',
+    title: '入浴の入力',
+    subtitle: '新しく記録を追加する',
+    symbol: { ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' },
+    screenHeaderTitle: '新しく記録',
+    screenHeading: '入浴の入力',
     screenDescription:
-      'カテゴリに当てはまらない観察やメモを自由に残し、あとから検索しやすくします。',
+      '入浴の日時・気づきや様子のメモ・問題の有無を入力して保存します。',
   },
   {
-    segment: 'image-memos',
+    segment: 'rehab-new',
     menuSection: 'input',
-    title: '画像メモ',
-    subtitle: '写真を登録・入力する',
+    title: 'リハビリ活動の入力',
+    subtitle: '新しく記録を追加する',
+    symbol: { ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' },
+    screenHeaderTitle: '新しく記録',
+    screenHeading: 'リハビリ活動の入力',
+    screenDescription:
+      '日付・開始・終了時刻（日本時間）、行った内容・メモ、問題の有無を入力して保存します。',
+  },
+  {
+    segment: 'sleep-new',
+    menuSection: 'input',
+    title: '睡眠の入力',
+    subtitle: '新しく記録を追加する',
+    symbol: { ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' },
+    screenHeaderTitle: '新しく記録',
+    screenHeading: '睡眠の入力',
+    screenDescription:
+      '臥床した日付と臥床・起床時刻（日本時間）、メモ、問題の有無を入力して保存します。',
+  },
+  {
+    segment: 'notes-new',
+    menuSection: 'input',
+    title: '認知症の様子、その他気づきの入力',
+    subtitle: '日時・様子・メモ・問題の有無を記録する',
+    symbol: { ios: 'lightbulb.fill', android: 'lightbulb', web: 'lightbulb' },
+    screenHeaderTitle: '新しく記録',
+    screenHeading: '認知症の様子、その他気づき',
+    screenDescription:
+      '気づいた日時（日本時間）、認知症の様子（平穏・不穏など）、その他の気づき、問題の有無を入力して保存します。',
+  },
+  {
+    segment: 'image-memos-new',
+    menuSection: 'input',
+    title: '画像メモの入力',
+    subtitle: '写真・日時・メモ・問題の有無を記録する',
     symbol: { ios: 'photo.on.rectangle.angled', android: 'image', web: 'image' },
-    screenHeaderTitle: '画像メモ',
+    screenHeaderTitle: '新しく記録',
     screenHeading: '画像メモ',
     screenDescription:
-      '患部の様子や環境の写真などを日付とともに保存し、一覧・拡大表示できるようにします。',
+      '日常の様子や、ケガ・褥瘡の経過など介護に必要な写真を、日時（日本時間）・メモ・問題の有無とともに保存します。',
   },
   {
     segment: 'meals',
@@ -169,8 +182,63 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
       '過去のバイタル記録を日付で絞り込んで一覧表示します。',
   },
   {
-    segment: 'pdf-export',
+    segment: 'bathing',
     menuSection: 'list',
+    title: '入浴の記録',
+    subtitle: '一覧で見る。各行から編集・削除',
+    symbol: { ios: 'list.bullet.rectangle.fill', android: 'list', web: 'list' },
+    screenHeaderTitle: '入浴の記録',
+    screenHeading: '入浴の記録一覧',
+    screenDescription:
+      '過去の入浴記録を日付で絞り込んで一覧表示します。',
+  },
+  {
+    segment: 'rehab',
+    menuSection: 'list',
+    title: 'リハビリ活動の記録',
+    subtitle: '一覧で見る。各行から編集・削除',
+    symbol: { ios: 'list.bullet.rectangle.fill', android: 'list', web: 'list' },
+    screenHeaderTitle: 'リハビリ活動の記録',
+    screenHeading: 'リハビリ活動の記録一覧',
+    screenDescription:
+      '過去のリハビリ活動の記録を日付で絞り込んで一覧表示します。',
+  },
+  {
+    segment: 'sleep',
+    menuSection: 'list',
+    title: '睡眠の記録',
+    subtitle: '一覧で見る。各行から編集・削除',
+    symbol: { ios: 'list.bullet.rectangle.fill', android: 'list', web: 'list' },
+    screenHeaderTitle: '睡眠の記録',
+    screenHeading: '睡眠の記録一覧',
+    screenDescription:
+      '過去の睡眠記録を臥床した日で絞り込んで一覧表示します。',
+  },
+  {
+    segment: 'notes',
+    menuSection: 'list',
+    title: '認知症の様子、その他気づきの記録',
+    subtitle: '一覧で見る。各行から編集・削除',
+    symbol: { ios: 'list.bullet.rectangle.fill', android: 'list', web: 'list' },
+    screenHeaderTitle: '様子・気づきの記録',
+    screenHeading: '認知症の様子、その他気づきの一覧',
+    screenDescription:
+      '過去の記録を日付で絞り込んで一覧表示します。',
+  },
+  {
+    segment: 'image-memos',
+    menuSection: 'list',
+    title: '画像メモの記録',
+    subtitle: '一覧で見る。各行から編集・削除',
+    symbol: { ios: 'list.bullet.rectangle.fill', android: 'list', web: 'list' },
+    screenHeaderTitle: '画像メモ',
+    screenHeading: '画像メモの一覧',
+    screenDescription:
+      '過去の画像メモを日付で絞り込んで一覧表示します。',
+  },
+  {
+    segment: 'pdf-export',
+    menuSection: 'other',
     title: '介護記録のPDF',
     subtitle: '出力・共有',
     symbol: { ios: 'doc.richtext.fill', android: 'picture_as_pdf', web: 'picture_as_pdf' },

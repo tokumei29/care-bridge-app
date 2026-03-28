@@ -1,12 +1,13 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import type { CareRecipient } from '@/features/care-recipients/types';
+import { useAvatarDisplayUri } from '@/lib/useAvatarDisplayUri';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
 
@@ -24,13 +25,21 @@ function initialGlyph(name: string): string {
 }
 
 export function RecipientCard({ recipient, onOpenCare, onEdit, onDelete }: Props) {
+  const hasAvatar = Boolean(recipient.avatarUrl?.trim());
+  const displayUri = useAvatarDisplayUri(recipient.avatarUrl);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [displayUri]);
+
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
   const layout = useResponsiveLayout();
   const isTablet = layout.isTablet;
-  const avatarSize = layout.isWideTablet ? 58 : isTablet ? 54 : 48;
-  const nameSize = isTablet ? 19 : 17;
-  const subSize = isTablet ? 14 : 13;
+  const avatarSize = layout.isWideTablet ? 132 : isTablet ? 118 : 104;
+  const nameSize = isTablet ? 20 : 18;
+  const subSize = isTablet ? 15 : 14;
 
   const confirmDelete = () => {
     Alert.alert(
@@ -76,54 +85,66 @@ export function RecipientCard({ recipient, onOpenCare, onEdit, onDelete }: Props
         onPress={onOpenCare}
         style={({ pressed }) => [styles.mainTap, { opacity: pressed ? 0.92 : 1 }]}
         android_ripple={{ color: c.accentMuted }}>
-        <View
-          style={[
-            styles.avatarRing,
-            {
-              width: avatarSize + 6,
-              height: avatarSize + 6,
-              borderRadius: (avatarSize + 6) / 2,
-              borderColor: c.accentMuted,
-            },
-          ]}>
-          <LinearGradient
-            colors={[c.avatarBg, c.accentMuted]}
+        <View style={styles.mainTapInner}>
+          <View
             style={[
-              styles.avatar,
+              styles.avatarRing,
               {
-                width: avatarSize,
-                height: avatarSize,
-                borderRadius: avatarSize / 2,
+                width: avatarSize + 8,
+                height: avatarSize + 8,
+                borderRadius: (avatarSize + 8) / 2,
+                borderColor: c.accentMuted,
               },
             ]}>
-            {recipient.avatarUrl ? (
-              <Image
-                source={{ uri: recipient.avatarUrl }}
-                style={StyleSheet.absoluteFillObject}
-                contentFit="cover"
-                transition={180}
-              />
-            ) : (
-              <Text style={[styles.avatarText, { color: c.accent, fontSize: avatarSize * 0.38 }]}>
-                {initialGlyph(recipient.name)}
+            <LinearGradient
+              colors={[c.avatarBg, c.accentMuted]}
+              style={[
+                styles.avatar,
+                {
+                  width: avatarSize,
+                  height: avatarSize,
+                  borderRadius: avatarSize / 2,
+                },
+              ]}>
+              {hasAvatar && displayUri && !avatarLoadFailed ? (
+                <Image
+                  source={{ uri: displayUri }}
+                  style={StyleSheet.absoluteFillObject}
+                  contentFit="cover"
+                  transition={180}
+                  onError={() => {
+                    if (__DEV__) {
+                      console.warn('[RecipientCard] avatar load failed', displayUri);
+                    }
+                    setAvatarLoadFailed(true);
+                  }}
+                />
+              ) : (
+                <Text style={[styles.avatarText, { color: c.accent, fontSize: avatarSize * 0.34 }]}>
+                  {initialGlyph(recipient.name)}
+                </Text>
+              )}
+            </LinearGradient>
+          </View>
+          <View style={styles.nameBlock}>
+            <View style={styles.nameRow}>
+              <Text
+                style={[styles.name, { color: c.text, fontSize: nameSize }]}
+                numberOfLines={2}>
+                {recipient.name}
               </Text>
-            )}
-          </LinearGradient>
+              <SymbolView
+                name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                tintColor={c.accent}
+                size={isTablet ? 22 : 20}
+                style={styles.chevron}
+              />
+            </View>
+            <Text style={[styles.sub, { color: c.textSecondary, fontSize: subSize }]}>
+              記録を見る・入力する（タップ）
+            </Text>
+          </View>
         </View>
-        <View style={styles.nameBlock}>
-          <Text style={[styles.name, { color: c.text, fontSize: nameSize }]} numberOfLines={1}>
-            {recipient.name}
-          </Text>
-          <Text style={[styles.sub, { color: c.textSecondary, fontSize: subSize }]}>
-            記録を見る・入力する
-          </Text>
-        </View>
-        <SymbolView
-          name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-          tintColor={c.accent}
-          size={isTablet ? 20 : 18}
-          style={styles.chevron}
-        />
       </Pressable>
       <View style={[styles.divider, { backgroundColor: c.border }]} />
       <View style={[styles.toolbar, isTablet && styles.toolbarTablet]}>
@@ -160,7 +181,7 @@ export function RecipientCard({ recipient, onOpenCare, onEdit, onDelete }: Props
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
     marginBottom: 0,
@@ -179,10 +200,11 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   mainTap: {
-    flexDirection: 'row',
+    paddingVertical: 22,
+    paddingHorizontal: 20,
+  },
+  mainTapInner: {
     alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
   },
   avatarRing: {
     alignItems: 'center',
@@ -198,24 +220,36 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   nameBlock: {
-    flex: 1,
-    marginLeft: 14,
+    marginTop: 16,
+    width: '100%',
     minWidth: 0,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    maxWidth: '100%',
   },
   name: {
     fontWeight: '800',
     letterSpacing: -0.3,
+    textAlign: 'center',
+    flexShrink: 1,
   },
   sub: {
-    marginTop: 5,
+    marginTop: 8,
     fontWeight: '500',
+    textAlign: 'center',
   },
   chevron: {
-    marginLeft: 8,
+    flexShrink: 0,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 18,
+    width: '100%',
   },
   toolbar: {
     flexDirection: 'row',

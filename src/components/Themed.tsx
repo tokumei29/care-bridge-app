@@ -25,21 +25,33 @@ export function useThemeColor(
 
   if (colorFromProps) {
     return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
   }
+  const fromPalette = Colors[theme][colorName];
+  if (fromPalette != null && fromPalette !== '') {
+    return fromPalette;
+  }
+  if (colorName === 'text') {
+    return theme === 'dark' ? Colors.dark.text : Colors.light.text;
+  }
+  return theme === 'dark' ? Colors.dark.background : Colors.light.background;
 }
 
 export function Text(props: TextProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
+  const theme = useColorScheme();
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const resolved =
+    color ?? (theme === 'dark' ? Colors.dark.text : Colors.light.text);
 
-  return <DefaultText style={[{ color }, style]} {...otherProps} />;
+  return <DefaultText style={[{ color: resolved }, style]} {...otherProps} />;
 }
 
 export function View(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
+  const theme = useColorScheme();
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
+  const resolved =
+    backgroundColor ?? (theme === 'dark' ? Colors.dark.background : Colors.light.background);
 
-  return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
+  return <DefaultView style={[{ backgroundColor: resolved }, style]} {...otherProps} />;
 }

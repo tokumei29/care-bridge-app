@@ -200,28 +200,26 @@ export function DashboardScreen() {
                 </Text>
               </LinearGradient>
             ) : (
-              <View
-                style={[
-                  styles.grid,
-                  {
-                    flexDirection: layout.columnCount > 1 ? 'row' : 'column',
-                    flexWrap: layout.columnCount > 1 ? 'wrap' : 'nowrap',
-                    gap: layout.gap,
-                  },
-                ]}>
+              <View style={[styles.recipientStack, { gap: layout.gap }]}>
                 {recipients.map((r) => (
-                  <View
-                    key={r.id}
-                    style={{
-                      width: layout.columnCount > 1 ? layout.gridItemWidth : '100%',
-                    }}>
+                  <View key={r.id} style={styles.recipientStackItem}>
                     <RecipientCard
                       recipient={r}
-                      onOpenCare={() =>
-                        router.push(
-                          { pathname: '/care/[recipientId]', params: { recipientId: r.id } } as unknown as Href
-                        )
-                      }
+                      onOpenCare={() => {
+                        const rid = String(r.id ?? '').trim();
+                        if (!rid) {
+                          Alert.alert(
+                            '開けません',
+                            'この被介護者のデータに問題があります。一覧を更新してから再度お試しください。'
+                          );
+                          void refreshRecipients();
+                          return;
+                        }
+                        router.push({
+                          pathname: '/care/[recipientId]',
+                          params: { recipientId: rid },
+                        } as unknown as Href);
+                      }}
                       onEdit={() => setEditId(r.id)}
                       onDelete={() => {
                         void removeRecipient(r.id);
@@ -239,7 +237,7 @@ export function DashboardScreen() {
                 styles.ctaOuter,
                 {
                   opacity: !canAddMore || !isSignedIn ? 0.45 : pressed ? 0.92 : 1,
-                  marginTop: layout.isTablet ? 8 : 4,
+                  marginTop: layout.isTablet ? 32 : 28,
                 },
               ]}>
               <LinearGradient
@@ -350,7 +348,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
-  grid: {
+  recipientStack: {
+    width: '100%',
+    flexDirection: 'column',
+  },
+  recipientStackItem: {
     width: '100%',
   },
   empty: {

@@ -207,3 +207,16 @@ export function shiftJapanMonth(year: number, month: number, delta: number): { y
   const m = d.getUTCMonth() + 1;
   return { year: y, month: m };
 }
+
+/** 日本時間の暦日 `dateKey` の翌日（YYYY-MM-DD） */
+export function addOneJapanCalendarDay(dateKey: string): string {
+  const p = parseJapanDateKey(dateKey);
+  if (!p) {
+    throw new Error(`Invalid dateKey: ${dateKey}`);
+  }
+  const ms = Date.parse(`${p.year}-${pad2(p.month)}-${pad2(p.day)}T12:00:00+09:00`);
+  if (Number.isNaN(ms)) {
+    throw new Error(`Invalid dateKey: ${dateKey}`);
+  }
+  return formatJapanDateKey(new Date(ms + 24 * 60 * 60 * 1000));
+}
