@@ -113,6 +113,26 @@ function formatUnknownError(e: unknown): string {
   return String(e);
 }
 
+function isPickingInProgressError(e: unknown): boolean {
+  const m = formatUnknownError(e).toLowerCase();
+  return m.includes('already in progress') || m.includes('picking in progress');
+}
+
+/**
+ * iOS/Android のファイルピッカーはネイティブ側で1つまで。並列で pickDirectoryAsync すると
+ * 「File picking is already in progress」になるため直列化する。
+ */
+let nativePdfPickerChain: Promise<void> = Promise.resolve();
+
+async function withNativePdfPickerExclusive<T>(fn: () => Promise<T>): Promise<T> {
+  const next = nativePdfPickerChain.then(fn);
+  nativePdfPickerChain = next.then(
+    () => undefined,
+    () => undefined
+  );
+  return next;
+}
+
 /** 共有シートから「ファイルに保存」やクラウドへ送れるよう PDF を渡す */
 async function openShareSheetToSavePdf(arrayBuffer: ArrayBuffer, safeName: string): Promise<void> {
   careRecordPdfDebugLog('openShareSheetToSavePdf start', { bytes: arrayBuffer.byteLength, safeName });
@@ -195,50 +215,62 @@ export async function savePdfToUserPickedDirectory(arrayBuffer: ArrayBuffer, fil
     return;
   }
 
-  const safeName = sanitizePdfFilename(filename);
-  logPdfBufferProbe('savePdfToUserPickedDirectory(native)', arrayBuffer);
+  return withNativePdfPickerExclusive(async () => {
+    const safeName = sanitizePdfFilename(filename);
+    logPdfBufferProbe('savePdfToUserPickedDirectory(native)', arrayBuffer);
 
-  // iOS シミュレータではフォルダピッカーが不安定なことが多いため、共有シートへ直接回す
-  if (Platform.OS === 'ios' && !Device.isDevice) {
-    careRecordPdfDebugLog('savePdf: iOS Simulator — skip folder picker, use share sheet');
-    try {
-      await openShareSheetToSavePdf(arrayBuffer, safeName);
-    } catch (e) {
-      careRecordPdfDebugLog('savePdf: iOS Simulator share failed', { error: formatUnknownError(e) });
-      Alert.alert('保存できませんでした', formatUnknownError(e));
-    }
-    return;
-  }
-
-  try {
-    careRecordPdfDebugLog('pickDirectoryAsync calling');
-    const picked = await Directory.pickDirectoryAsync();
-    const outFile = picked.createFile(safeName, 'application/pdf');
-    outFile.write(new Uint8Array(arrayBuffer));
-    careRecordPdfDebugLog('pickDirectory save success', { safeName });
-    Alert.alert('保存しました', '選んだフォルダに PDF を保存しました。');
-    return;
-  } catch (e) {
-    if (isPickerCancelledError(e)) {
-      careRecordPdfDebugLog('pickDirectory cancelled or user-dismissed', {
-        message: formatUnknownError(e),
-      });
+    // iOS シミュレータではフォルダピッカーが不安定なことが多いため、共有シートへ直接回す
+    if (Platform.OS === 'ios' && !Device.isDevice) {
+      careRecordPdfDebugLog('savePdf: iOS Simulator — skip folder picker, use share sheet');
+      try {
+        await openShareSheetToSavePdf(arrayBuffer, safeName);
+      } catch (e) {
+        careRecordPdfDebugLog('savePdf: iOS Simulator share failed', { error: formatUnknownError(e) });
+        Alert.alert('保存できませんでした', formatUnknownError(e));
+      }
       return;
     }
-    careRecordPdfDebugLog('pickDirectory or write failed, fallback share', { error: formatUnknownError(e) });
+
     try {
-      await openShareSheetToSavePdf(arrayBuffer, safeName);
-    } catch (e2) {
-      careRecordPdfDebugLog('fallback share failed', {
-        first: formatUnknownError(e),
-        second: formatUnknownError(e2),
-      });
-      Alert.alert(
-        '保存できませんでした',
-        `フォルダへの保存に失敗し、共有画面も開けませんでした。\n\n・${formatUnknownError(e)}\n・${formatUnknownError(e2)}`
-      );
+      careRecordPdfDebugLog('pickDirectoryAsync calling');
+      const picked = await Directory.pickDirectoryAsync();
+      const outFile = picked.createFile(safeName, 'application/pdf');
+      outFile.write(new Uint8Array(arrayBuffer));
+      careRecordPdfDebugLog('pickDirectory save success', { safeName });
+      Alert.alert('保存しました', '選んだフォルダに PDF を保存しました。');
+      return;
+    } catch (e) {
+      if (isPickerCancelledError(e)) {
+        careRecordPdfDebugLog('pickDirectory cancelled or user-dismissed', {
+          message: formatUnknownError(e),
+        });
+        return;
+      }
+      if (isPickingInProgressError(e)) {
+        careRecordPdfDebugLog('pickDirectory skipped: already in progress', {
+          message: formatUnknownError(e),
+        });
+        Alert.alert(
+          '保存先の選択が重なっています',
+          'フォルダの選択画面が開いている間に、別の保存が始まりました。いったんキャンセルしてから、もう一度「ファイルに保存」を試してください。'
+        );
+        return;
+      }
+      careRecordPdfDebugLog('pickDirectory or write failed, fallback share', { error: formatUnknownError(e) });
+      try {
+        await openShareSheetToSavePdf(arrayBuffer, safeName);
+      } catch (e2) {
+        careRecordPdfDebugLog('fallback share failed', {
+          first: formatUnknownError(e),
+          second: formatUnknownError(e2),
+        });
+        Alert.alert(
+          '保存できませんでした',
+          `フォルダへの保存に失敗し、共有画面も開けませんでした。\n\n・${formatUnknownError(e)}\n・${formatUnknownError(e2)}`
+        );
+      }
     }
-  }
+  });
 }
 
 /** ネイティブ: メール作成（PDF 添付） */
@@ -252,8 +284,17 @@ export async function composeEmailWithPdf(
   if (!available) {
     careRecordPdfDebugLog('composeEmailWithPdf: MailComposer not available');
     Alert.alert(
-      'メールを開けません',
-      'この端末でメールアプリの利用が検出できませんでした。メールの設定を確認するか、「LINEで共有」から送ってください。'
+      'メールアプリを開けません',
+      'iOSシミュレータではメールが未設定のことが多いです。実機で試すか、共有シートからメールやLINEへ送ってください。',
+      [
+        { text: '閉じる', style: 'cancel' },
+        {
+          text: '共有で送る',
+          onPress: () => {
+            void openSystemShareSheetForPdf(arrayBuffer, filename);
+          },
+        },
+      ]
     );
     return;
   }

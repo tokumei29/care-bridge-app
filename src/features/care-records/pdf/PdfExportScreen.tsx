@@ -29,6 +29,7 @@ import {
   countInclusiveCalendarDays,
   formatJapanDateLabel,
   lastDayKeyInInclusiveRange,
+  pickDefaultDayKeyForPdfExport,
 } from '@/features/care-records/pdf/dayKeyUtils';
 import {
   PDF_EXPORT_CREATOR_NAME_MAX,
@@ -279,6 +280,7 @@ export function PdfExportScreen({ recipientId, exportMode }: Props) {
   const [pickerTargetDay, setPickerTargetDay] = useState<'start' | 'end' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deliveryPdf, setDeliveryPdf] = useState<PdfDeliveryState | null>(null);
+  const [deliveryBusy, setDeliveryBusy] = useState(false);
   const [sectionIncluded, setSectionIncluded] = useState(createDefaultPdfExportSectionSelection);
 
   const rangeInitRef = useRef(false);
@@ -290,6 +292,7 @@ export function PdfExportScreen({ recipientId, exportMode }: Props) {
     rangeInitRef.current = false;
     setSectionIncluded(createDefaultPdfExportSectionSelection());
     setDeliveryPdf(null);
+    setDeliveryBusy(false);
     setDayStart(null);
     setDayEnd(null);
   }, [recipientId]);
@@ -320,9 +323,11 @@ export function PdfExportScreen({ recipientId, exportMode }: Props) {
   useEffect(() => {
     if (exportMode !== 'day') return;
     if (rangeInitRef.current || dayKeys.length === 0) return;
-    const last = dayKeys[dayKeys.length - 1]!;
-    setDayStart(last);
-    setDayEnd(last);
+    const d = pickDefaultDayKeyForPdfExport(dayKeys);
+    if (d) {
+      setDayStart(d);
+      setDayEnd(d);
+    }
     rangeInitRef.current = true;
   }, [exportMode, dayKeys]);
 
@@ -794,12 +799,14 @@ export function PdfExportScreen({ recipientId, exportMode }: Props) {
           transparent
           animationType="fade"
           onRequestClose={() => {
+            if (deliveryBusy) return;
             careRecordPdfDebugLog('delivery modal onRequestClose');
             setDeliveryPdf(null);
           }}>
           <Pressable
             style={styles.modalBackdrop}
             onPress={() => {
+              if (deliveryBusy) return;
               careRecordPdfDebugLog('delivery modal backdrop dismiss');
               setDeliveryPdf(null);
             }}>
@@ -815,82 +822,111 @@ export function PdfExportScreen({ recipientId, exportMode }: Props) {
               onPress={(e) => e.stopPropagation()}>
               <Text style={[styles.modalTitle, { color: c.text }]}>PDFの送り方</Text>
               <Text style={[styles.deliveryHint, { color: c.textSecondary }]}>
-                {Platform.OS === 'web'
-                  ? 'ブラウザではメールに PDF を自動添付できません。メールを使う場合は先に「ファイルに保存」でダウンロードし、メールに手で添付してください。'
-                  : '「ファイルに保存」ではまずフォルダを選びます。ピッカーが出ない場合は自動で共有画面が開くので、「ファイルに保存」やクラウドを選んでください。'}
+                {deliveryBusy
+                  ? '処理中です。フォルダや共有の画面が出ている間は、この画面を閉じずにお待ちください。'
+                  : Platform.OS === 'web'
+                    ? 'ブラウザではメールに PDF を自動添付できません。メールを使う場合は先に「ファイルに保存」でダウンロードし、メールに手で添付してください。'
+                    : '「ファイルに保存」ではまずフォルダを選びます。ピッカーが出ない場合は自動で共有画面が開くので、「ファイルに保存」やクラウドを選んでください。'}
               </Text>
+              {deliveryBusy ? (
+                <View style={styles.deliveryBusyBox}>
+                  <ActivityIndicator size="large" color={c.accent} />
+                </View>
+              ) : null}
               <Pressable
+                disabled={deliveryBusy}
                 onPress={() => {
-                  if (!deliveryPdf) return;
+                  if (!deliveryPdf || deliveryBusy) return;
                   const snap = deliveryPdf;
                   careRecordPdfDebugLog('delivery UI: tap ファイルに保存', {
                     bytes: snap.arrayBuffer.byteLength,
                     filename: snap.filename,
                   });
-                  setDeliveryPdf(null);
-                  void savePdfToUserPickedDirectory(snap.arrayBuffer, snap.filename);
+                  setDeliveryBusy(true);
+                  void (async () => {
+                    try {
+                      await savePdfToUserPickedDirectory(snap.arrayBuffer, snap.filename);
+                    } finally {
+                      setDeliveryBusy(false);
+                      setDeliveryPdf(null);
+                    }
+                  })();
                 }}
                 style={({ pressed }) => [
                   styles.deliveryActionRow,
                   {
                     backgroundColor: c.surfaceSolid,
                     borderColor: c.borderStrong,
-                    opacity: pressed ? 0.88 : 1,
+                    opacity: deliveryBusy ? 0.45 : pressed ? 0.88 : 1,
                   },
                 ]}>
                 <Text style={[styles.modalRowText, { color: c.text }]}>ファイルに保存（ダウンロード）</Text>
               </Pressable>
               <Pressable
+                disabled={deliveryBusy}
                 onPress={() => {
-                  if (!deliveryPdf) return;
+                  if (!deliveryPdf || deliveryBusy) return;
                   const snap = deliveryPdf;
                   careRecordPdfDebugLog('delivery UI: tap メールで送る', { platform: Platform.OS });
-                  setDeliveryPdf(null);
-                  if (Platform.OS === 'web') {
-                    openWebMailComposeWithoutAttachment(snap.mailSubject, snap.mailBody);
-                  } else {
-                    void composeEmailWithPdf(snap.arrayBuffer, snap.filename, {
-                      subject: snap.mailSubject,
-                      body: snap.mailBody,
-                    });
-                  }
+                  setDeliveryBusy(true);
+                  void (async () => {
+                    try {
+                      if (Platform.OS === 'web') {
+                        openWebMailComposeWithoutAttachment(snap.mailSubject, snap.mailBody);
+                      } else {
+                        await composeEmailWithPdf(snap.arrayBuffer, snap.filename, {
+                          subject: snap.mailSubject,
+                          body: snap.mailBody,
+                        });
+                      }
+                    } finally {
+                      setDeliveryBusy(false);
+                      setDeliveryPdf(null);
+                    }
+                  })();
                 }}
                 style={({ pressed }) => [
                   styles.deliveryActionRow,
                   {
                     backgroundColor: c.surfaceSolid,
                     borderColor: c.borderStrong,
-                    opacity: pressed ? 0.88 : 1,
+                    opacity: deliveryBusy ? 0.45 : pressed ? 0.88 : 1,
                   },
                 ]}>
                 <Text style={[styles.modalRowText, { color: c.text }]}>メールで送る</Text>
               </Pressable>
               <Pressable
+                disabled={deliveryBusy}
                 onPress={() => {
-                  if (!deliveryPdf) return;
+                  if (!deliveryPdf || deliveryBusy) return;
                   const snap = deliveryPdf;
                   careRecordPdfDebugLog('delivery UI: tap LINEで共有', { platform: Platform.OS });
-                  setDeliveryPdf(null);
-                  if (Platform.OS === 'web') {
-                    void (async () => {
-                      const r = await sharePdfWithWebShareApi(snap.arrayBuffer, snap.filename);
-                      if (r === 'unsupported') {
-                        Alert.alert(
-                          '共有できませんでした',
-                          'このブラウザでは PDF の共有に対応していないことがあります。「ファイルに保存」からダウンロードし、LINE などから送ってください。'
-                        );
+                  setDeliveryBusy(true);
+                  void (async () => {
+                    try {
+                      if (Platform.OS === 'web') {
+                        const r = await sharePdfWithWebShareApi(snap.arrayBuffer, snap.filename);
+                        if (r === 'unsupported') {
+                          Alert.alert(
+                            '共有できませんでした',
+                            'このブラウザでは PDF の共有に対応していないことがあります。「ファイルに保存」からダウンロードし、LINE などから送ってください。'
+                          );
+                        }
+                      } else {
+                        await openSystemShareSheetForPdf(snap.arrayBuffer, snap.filename);
                       }
-                    })();
-                  } else {
-                    void openSystemShareSheetForPdf(snap.arrayBuffer, snap.filename);
-                  }
+                    } finally {
+                      setDeliveryBusy(false);
+                      setDeliveryPdf(null);
+                    }
+                  })();
                 }}
                 style={({ pressed }) => [
                   styles.deliveryActionRow,
                   {
                     backgroundColor: c.surfaceSolid,
                     borderColor: c.borderStrong,
-                    opacity: pressed ? 0.88 : 1,
+                    opacity: deliveryBusy ? 0.45 : pressed ? 0.88 : 1,
                   },
                 ]}>
                 <Text style={[styles.modalRowText, { color: c.text }]}>LINEで共有</Text>
@@ -899,7 +935,9 @@ export function PdfExportScreen({ recipientId, exportMode }: Props) {
                 </Text>
               </Pressable>
               <Pressable
+                disabled={deliveryBusy}
                 onPress={() => {
+                  if (deliveryBusy) return;
                   careRecordPdfDebugLog('delivery UI: tap 閉じる');
                   setDeliveryPdf(null);
                 }}
@@ -1080,6 +1118,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,
+  },
+  deliveryBusyBox: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    marginBottom: 8,
   },
   modalList: {
     flexGrow: 0,

@@ -1,4 +1,4 @@
-import { parseIsoToJapanDateTimeParts } from '@/features/care-records/shared';
+import { getJapanNowParts, parseIsoToJapanDateTimeParts } from '@/features/care-records/shared';
 
 import type { MonthKeyCollectionInput } from '@/features/care-records/pdf/monthKeyUtils';
 
@@ -86,4 +86,18 @@ export function lastDayKeyInInclusiveRange(
     (k) => compareDateKeys(k, startKey) >= 0 && compareDateKeys(k, endKey) <= 0
   );
   return hit.length ? hit[hit.length - 1]! : null;
+}
+
+/**
+ * 日単位PDFの初期選択: 日本時間の「今日」が記録日にあればそれ、なければ今日以前で最新の記録日、なければ最新の記録日。
+ */
+export function pickDefaultDayKeyForPdfExport(dayKeys: string[]): string | null {
+  if (dayKeys.length === 0) return null;
+  const today = getJapanNowParts().dateKey;
+  if (dayKeys.includes(today)) return today;
+  const notAfterToday = dayKeys.filter((k) => compareDateKeys(k, today) <= 0);
+  if (notAfterToday.length > 0) {
+    return notAfterToday[notAfterToday.length - 1]!;
+  }
+  return dayKeys[dayKeys.length - 1]!;
 }
