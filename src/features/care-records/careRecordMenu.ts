@@ -20,7 +20,8 @@ export type CareRecordRouteSegment =
   | 'notes-new'
   | 'image-memos'
   | 'image-memos-new'
-  | 'pdf-export';
+  | 'pdf-export'
+  | 'pdf-export-daily';
 
 export type CareRecordMenuItem = {
   segment: CareRecordRouteSegment;
@@ -56,6 +57,7 @@ export const CARE_RECORD_PATHNAME: Record<CareRecordRouteSegment, string> = {
   'image-memos': '/care/[recipientId]/image-memos',
   'image-memos-new': '/care/[recipientId]/image-memos/new',
   'pdf-export': '/care/[recipientId]/pdf-export',
+  'pdf-export-daily': '/care/[recipientId]/pdf-export-daily',
 };
 
 /** 表示順: 入力セクション用を先に、一覧セクション用を後に並べる */
@@ -239,13 +241,24 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
   {
     segment: 'pdf-export',
     menuSection: 'other',
-    title: '介護記録のPDF',
-    subtitle: '出力・共有',
+    title: '介護記録のPDF（月）',
+    subtitle: '月単位で出力・共有',
     symbol: { ios: 'doc.richtext.fill', android: 'picture_as_pdf', web: 'picture_as_pdf' },
-    screenHeaderTitle: 'PDF出力',
-    screenHeading: '介護記録のPDF',
+    screenHeaderTitle: 'PDF（月）',
+    screenHeading: '介護記録のPDF（月単位）',
     screenDescription:
-      '期間を選んで各記録をまとめたPDFを生成し、印刷や医療機関への共有に使えるようにします。',
+      '記録の概要を月の範囲でPDFにまとめます。遠方のご家族への共有や要介護認定の疎明資料などに使えます。',
+  },
+  {
+    segment: 'pdf-export-daily',
+    menuSection: 'other',
+    title: '介護記録のPDF（日）',
+    subtitle: '最大14日・日単位で出力',
+    symbol: { ios: 'doc.richtext.fill', android: 'picture_as_pdf', web: 'picture_as_pdf' },
+    screenHeaderTitle: 'PDF（日）',
+    screenHeading: '介護記録のPDF（日単位）',
+    screenDescription:
+      '記録の概要を日単位の範囲でPDFにまとめます。期間は最大14日までです（氏名・作成者・項目・共有メモは月単位と同じです）。',
   },
 ];
 

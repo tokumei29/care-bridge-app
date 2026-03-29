@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { destroyMyAccount } from '@/api/account';
+import { getApiBaseUrl } from '@/api/config';
 import { createCareRecipientsApi } from '@/api/careRecipients';
 import { isApiError } from '@/api/errors';
 import type { CareRecipientRecord } from '@/api/types/careRecipient';
@@ -179,7 +180,14 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
           setIsSignedIn(true);
         }
       } catch (e) {
-        if (__DEV__) console.error(e);
+        if (__DEV__) {
+          console.error('[CareRecipientsProvider] syncListOnce / care_recipients list failed', {
+            apiBaseUrl: getApiBaseUrl(),
+            hint:
+              '実機では localhost は使えません。.env.local の EXPO_PUBLIC_API_BASE_URL を PC の LAN IP（例: http://192.168.0.12:3000）に。Rails は bin/rails s -b 0.0.0.0',
+            error: e,
+          });
+        }
         if (!cancelled) {
           if (isApiError(e) && e.status === 401) {
             setIsSignedIn(false);

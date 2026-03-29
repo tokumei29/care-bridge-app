@@ -13,7 +13,7 @@ function joinUrl(path: string): string {
   return `${base}${p}`;
 }
 
-function parseErrorMessage(status: number, json: unknown): string {
+export function parseErrorMessage(status: number, json: unknown): string {
   if (json && typeof json === 'object' && 'errors' in json) {
     const err = (json as { errors: unknown }).errors;
     if (Array.isArray(err) && err.every((x) => typeof x === 'string')) {
