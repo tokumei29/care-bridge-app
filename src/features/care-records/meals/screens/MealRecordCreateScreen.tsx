@@ -18,6 +18,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { isApiError } from '@/api/errors';
 import { useMealRecordsApi } from '@/api/hooks/useMealRecordsApi';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { MealRecordFormBody } from '@/features/care-records/meals/components/MealRecordFormBody';
 import {
   buildMealSummaryText,
@@ -33,6 +35,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function MealRecordCreateScreen() {
   const { recipientId } = useLocalSearchParams<{ recipientId: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const mealRecordsApi = useMealRecordsApi();
   const scheme = useColorScheme();
@@ -64,9 +67,7 @@ export function MealRecordCreateScreen() {
     setIsSubmitting(true);
     try {
       await mealRecordsApi.create(recipientId, draftToWritePayload(draft));
-      Alert.alert('保存しました', '食事記録をサーバーに登録しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('create');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '保存に失敗しました';
       Alert.alert('保存できません', msg);
@@ -150,6 +151,7 @@ export function MealRecordCreateScreen() {
             }
           />
         </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

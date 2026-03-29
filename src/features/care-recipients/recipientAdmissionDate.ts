@@ -59,3 +59,23 @@ export function formatNextAdmissionJa(isoDate: string): string {
   const d = Number(m[3]);
   return `${y}年${mo}月${d}日`;
 }
+
+/** ローカル暦の「今日」から見た、入所予定日までの日数。当日 0・明日 1。過去は負。不正なら null。 */
+export function calendarDaysUntilIsoDate(iso: string): number | null {
+  const m = iso.match(ISO_DATE);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const admissionStart = new Date(y, mo - 1, d);
+  return Math.round((admissionStart.getTime() - todayStart.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+/** 入所リマインドを出す「あと N 日以内」か（当日〜5 日前まで：5・4・3・2・1 日前と当日） */
+export const ADMISSION_SOON_MAX_DAYS = 5;
+
+export function isAdmissionWithinSoonWindow(daysUntil: number): boolean {
+  return daysUntil >= 0 && daysUntil <= ADMISSION_SOON_MAX_DAYS;
+}

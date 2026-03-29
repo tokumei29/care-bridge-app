@@ -18,6 +18,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { isApiError } from '@/api/errors';
 import { useRehabRecordsApi } from '@/api/hooks/useRehabRecordsApi';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { RehabRecordFormBody } from '@/features/care-records/rehab/components/RehabRecordFormBody';
 import {
   buildRehabSummaryText,
@@ -34,6 +36,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function RehabRecordCreateScreen() {
   const { recipientId } = useLocalSearchParams<{ recipientId: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const rehabRecordsApi = useRehabRecordsApi();
   const scheme = useColorScheme();
@@ -65,9 +68,7 @@ export function RehabRecordCreateScreen() {
     setIsSubmitting(true);
     try {
       await rehabRecordsApi.create(recipientId, draftToRehabWritePayload(draft));
-      Alert.alert('保存しました', 'リハビリ活動の記録をサーバーに登録しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('create');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '保存に失敗しました';
       Alert.alert('保存できません', msg);
@@ -156,6 +157,7 @@ export function RehabRecordCreateScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

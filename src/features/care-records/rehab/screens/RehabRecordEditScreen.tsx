@@ -19,6 +19,8 @@ import { isApiError } from '@/api/errors';
 import { useRehabRecordsApi } from '@/api/hooks/useRehabRecordsApi';
 import type { RehabRecordRecord } from '@/api/types/rehabRecord';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { RehabRecordFormBody } from '@/features/care-records/rehab/components/RehabRecordFormBody';
 import {
   buildRehabSummaryText,
@@ -35,6 +37,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function RehabRecordEditScreen() {
   const { recipientId, id: recordId } = useLocalSearchParams<{ recipientId: string; id: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const rehabRecordsApi = useRehabRecordsApi();
   const scheme = useColorScheme();
@@ -97,9 +100,7 @@ export function RehabRecordEditScreen() {
     setIsSaving(true);
     try {
       await rehabRecordsApi.update(recipientId, recordId, draftToRehabWritePayload(draft));
-      Alert.alert('更新しました', 'リハビリ活動の記録を保存しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('update');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '更新に失敗しました';
       Alert.alert('保存できません', msg);
@@ -262,6 +263,7 @@ export function RehabRecordEditScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

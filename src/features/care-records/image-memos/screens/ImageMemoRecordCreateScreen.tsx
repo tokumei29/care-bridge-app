@@ -18,6 +18,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { isApiError } from '@/api/errors';
 import { useImageMemosApi } from '@/api/hooks/useImageMemosApi';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { ImageMemoRecordFormBody } from '@/features/care-records/image-memos/components/ImageMemoRecordFormBody';
 import {
   buildImageMemoSummaryText,
@@ -35,6 +37,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function ImageMemoRecordCreateScreen() {
   const { recipientId } = useLocalSearchParams<{ recipientId: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const imageMemosApi = useImageMemosApi();
   const scheme = useColorScheme();
@@ -80,9 +83,7 @@ export function ImageMemoRecordCreateScreen() {
         draft.localImageMimeType
       );
       await imageMemosApi.create(recipientId, draftToImageMemoWritePayload(draft, imageUrl));
-      Alert.alert('保存しました', '画像メモをサーバーに登録しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('create');
     } catch (e) {
       const msg = isApiError(e) ? e.message : e instanceof Error ? e.message : '保存に失敗しました';
       Alert.alert('保存できません', msg);
@@ -171,6 +172,7 @@ export function ImageMemoRecordCreateScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

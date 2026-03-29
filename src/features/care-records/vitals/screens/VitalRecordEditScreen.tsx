@@ -19,6 +19,8 @@ import { isApiError } from '@/api/errors';
 import { useVitalRecordsApi } from '@/api/hooks/useVitalRecordsApi';
 import type { VitalRecordRecord } from '@/api/types/vitalRecord';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { VitalRecordFormBody } from '@/features/care-records/vitals/components/VitalRecordFormBody';
 import {
   buildVitalSummaryText,
@@ -35,6 +37,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function VitalRecordEditScreen() {
   const { recipientId, id: recordId } = useLocalSearchParams<{ recipientId: string; id: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const vitalRecordsApi = useVitalRecordsApi();
   const scheme = useColorScheme();
@@ -104,9 +107,7 @@ export function VitalRecordEditScreen() {
     setIsSaving(true);
     try {
       await vitalRecordsApi.update(recipientId, recordId, draftToVitalWritePayload(draft));
-      Alert.alert('更新しました', 'バイタル記録を保存しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('update');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '更新に失敗しました';
       Alert.alert('保存できません', msg);
@@ -271,6 +272,7 @@ export function VitalRecordEditScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

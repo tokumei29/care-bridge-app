@@ -19,6 +19,8 @@ import { isApiError } from '@/api/errors';
 import { useMealRecordsApi } from '@/api/hooks/useMealRecordsApi';
 import type { MealRecordRecord } from '@/api/types/mealRecord';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { MealRecordFormBody } from '@/features/care-records/meals/components/MealRecordFormBody';
 import {
   buildMealSummaryText,
@@ -34,6 +36,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function MealRecordEditScreen() {
   const { recipientId, id: recordId } = useLocalSearchParams<{ recipientId: string; id: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const mealRecordsApi = useMealRecordsApi();
   const scheme = useColorScheme();
@@ -96,9 +99,7 @@ export function MealRecordEditScreen() {
     setIsSaving(true);
     try {
       await mealRecordsApi.update(recipientId, recordId, draftToWritePayload(draft));
-      Alert.alert('更新しました', '食事記録を保存しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('update');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '更新に失敗しました';
       Alert.alert('保存できません', msg);
@@ -263,6 +264,7 @@ export function MealRecordEditScreen() {
             }
           />
         </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

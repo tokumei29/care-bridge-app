@@ -19,6 +19,8 @@ import { isApiError } from '@/api/errors';
 import { useOtherNotesApi } from '@/api/hooks/useOtherNotesApi';
 import type { OtherNoteRecord } from '@/api/types/otherNote';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { OtherNoteRecordFormBody } from '@/features/care-records/other-notes/components/OtherNoteRecordFormBody';
 import {
   buildOtherNoteSummaryText,
@@ -34,6 +36,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function OtherNoteRecordEditScreen() {
   const { recipientId, id: recordId } = useLocalSearchParams<{ recipientId: string; id: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const otherNotesApi = useOtherNotesApi();
   const scheme = useColorScheme();
@@ -96,9 +99,7 @@ export function OtherNoteRecordEditScreen() {
     setIsSaving(true);
     try {
       await otherNotesApi.update(recipientId, recordId, draftToOtherNoteWritePayload(draft));
-      Alert.alert('更新しました', '記録を保存しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('update');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '更新に失敗しました';
       Alert.alert('保存できません', msg);
@@ -256,6 +257,7 @@ export function OtherNoteRecordEditScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

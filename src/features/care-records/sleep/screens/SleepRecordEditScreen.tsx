@@ -19,6 +19,8 @@ import { isApiError } from '@/api/errors';
 import { useSleepRecordsApi } from '@/api/hooks/useSleepRecordsApi';
 import type { SleepRecordRecord } from '@/api/types/sleepRecord';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { SleepRecordFormBody } from '@/features/care-records/sleep/components/SleepRecordFormBody';
 import {
   buildSleepSummaryText,
@@ -35,6 +37,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function SleepRecordEditScreen() {
   const { recipientId, id: recordId } = useLocalSearchParams<{ recipientId: string; id: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const sleepRecordsApi = useSleepRecordsApi();
   const scheme = useColorScheme();
@@ -97,9 +100,7 @@ export function SleepRecordEditScreen() {
     setIsSaving(true);
     try {
       await sleepRecordsApi.update(recipientId, recordId, draftToSleepWritePayload(draft));
-      Alert.alert('更新しました', '睡眠の記録を保存しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('update');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '更新に失敗しました';
       Alert.alert('保存できません', msg);
@@ -262,6 +263,7 @@ export function SleepRecordEditScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

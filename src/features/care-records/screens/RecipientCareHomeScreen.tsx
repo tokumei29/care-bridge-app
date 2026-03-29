@@ -13,6 +13,7 @@ import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useCareRecipients } from '@/features/care-recipients';
+import { AdmissionSoonBanner } from '@/features/care-recipients/components/AdmissionSoonBanner';
 import {
   CARE_RECORD_MENU,
   CARE_RECORD_PATHNAME,
@@ -143,6 +144,11 @@ export function RecipientCareHomeScreen() {
               ]}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator>
+            <AdmissionSoonBanner
+              recipient={recipient}
+              c={c}
+              scheme={scheme === 'dark' ? 'dark' : 'light'}
+            />
             <LinearGradient
               colors={[...heroShineGradient[themeKey].colors]}
               start={heroShineGradient[themeKey].start}

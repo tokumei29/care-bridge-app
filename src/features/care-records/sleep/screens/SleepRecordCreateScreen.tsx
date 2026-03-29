@@ -18,6 +18,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { isApiError } from '@/api/errors';
 import { useSleepRecordsApi } from '@/api/hooks/useSleepRecordsApi';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { SleepRecordFormBody } from '@/features/care-records/sleep/components/SleepRecordFormBody';
 import {
   buildSleepSummaryText,
@@ -34,6 +36,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function SleepRecordCreateScreen() {
   const { recipientId } = useLocalSearchParams<{ recipientId: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const sleepRecordsApi = useSleepRecordsApi();
   const scheme = useColorScheme();
@@ -65,9 +68,7 @@ export function SleepRecordCreateScreen() {
     setIsSubmitting(true);
     try {
       await sleepRecordsApi.create(recipientId, draftToSleepWritePayload(draft));
-      Alert.alert('保存しました', '睡眠の記録をサーバーに登録しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('create');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '保存に失敗しました';
       Alert.alert('保存できません', msg);
@@ -156,6 +157,7 @@ export function SleepRecordCreateScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }

@@ -19,6 +19,8 @@ import { isApiError } from '@/api/errors';
 import { useExcretionRecordsApi } from '@/api/hooks/useExcretionRecordsApi';
 import type { ExcretionRecordRecord } from '@/api/types/excretionRecord';
 import { useCareRecipients } from '@/features/care-recipients';
+import { RecordSavedCheerModal } from '@/features/care-records/components/RecordSavedCheerModal';
+import { useRecordSavedCheer } from '@/features/care-records/useRecordSavedCheer';
 import { ExcretionRecordFormBody } from '@/features/care-records/excretion/components/ExcretionRecordFormBody';
 import {
   buildExcretionSummaryText,
@@ -34,6 +36,7 @@ import { ctaGradient } from '@/theme/gradients';
 export function ExcretionRecordEditScreen() {
   const { recipientId, id: recordId } = useLocalSearchParams<{ recipientId: string; id: string }>();
   const router = useRouter();
+  const { cheerVisible, cheerMode, showCheer, dismissCheer } = useRecordSavedCheer();
   const { getRecipientById, isReady, isSignedIn } = useCareRecipients();
   const excretionRecordsApi = useExcretionRecordsApi();
   const scheme = useColorScheme();
@@ -96,9 +99,7 @@ export function ExcretionRecordEditScreen() {
     setIsSaving(true);
     try {
       await excretionRecordsApi.update(recipientId, recordId, draftToExcretionWritePayload(draft));
-      Alert.alert('更新しました', '排泄記録を保存しました。', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showCheer('update');
     } catch (e) {
       const msg = isApiError(e) ? e.message : '更新に失敗しました';
       Alert.alert('保存できません', msg);
@@ -256,6 +257,7 @@ export function ExcretionRecordEditScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <RecordSavedCheerModal visible={cheerVisible} mode={cheerMode} onDismiss={dismissCheer} />
     </ScreenBackdrop>
   );
 }
