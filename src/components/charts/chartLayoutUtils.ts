@@ -44,26 +44,39 @@ export function buildYTicks(minV: number, maxV: number, tickCount: number, snapT
   return deduped;
 }
 
+/** 欠測スロットをまたいで結ぶ線分（点線で示す） */
+export const SPARSE_CHART_GAP_STROKE_DASHARRAY = '4 5';
+
+export type SparseChartLineSegment = {
+  points: string;
+  /** 始点・終点の間に、この系列では値のないスロットが1つ以上ある */
+  bridgesSkippedSlots: boolean;
+};
+
 /**
  * 欠測スロットを挟んでも、有効な値同士を時系列順に直線で結ぶ。
+ * `bridgesSkippedSlots` が true の区間は隣接スロット以外を結んでいるので点線にする想定。
  */
-export function polylineSegmentsAcrossGaps(
+export function buildSparseLineSegmentsAcrossGaps(
   values: (number | null)[],
   xs: number[],
   yPixel: (dataValue: number) => number
-): string[] {
+): SparseChartLineSegment[] {
   const idx: number[] = [];
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
     if (v != null && Number.isFinite(v)) idx.push(i);
   }
-  const out: string[] = [];
+  const out: SparseChartLineSegment[] = [];
   for (let k = 0; k < idx.length - 1; k++) {
     const i = idx[k]!;
     const j = idx[k + 1]!;
     const vi = values[i]!;
     const vj = values[j]!;
-    out.push(`${xs[i]},${yPixel(vi)} ${xs[j]},${yPixel(vj)}`);
+    out.push({
+      points: `${xs[i]},${yPixel(vi)} ${xs[j]},${yPixel(vj)}`,
+      bridgesSkippedSlots: j - i > 1,
+    });
   }
   return out;
 }

@@ -9,8 +9,10 @@ import {
 export type ExcretionWeekChartPoint = {
   dateKey: string;
   xLabel: string;
-  urinationCount: number;
-  defecationCount: number;
+  /** その日に排泄記録が1件もないとき null（一覧グラフでは欠測として扱い、前後の日とは点線で結ぶ） */
+  urinationCount: number | null;
+  /** 同上 */
+  defecationCount: number | null;
 };
 
 /**
@@ -26,12 +28,16 @@ export function buildExcretionCountsLast7JapanDays(
   const out: ExcretionWeekChartPoint[] = [];
   for (let offset = -6; offset <= 0; offset++) {
     const dateKey = addJapanCalendarDays(end, offset);
-    let urinationCount = 0;
-    let defecationCount = 0;
-    for (const r of records) {
-      if (!isRecordedAtOnJapanDate(r.recorded_at, dateKey)) continue;
-      if (r.urination_status === 'present') urinationCount += 1;
-      if (r.defecation_status === 'present') defecationCount += 1;
+    const dayRecords = records.filter((r) => isRecordedAtOnJapanDate(r.recorded_at, dateKey));
+    let urinationCount: number | null = null;
+    let defecationCount: number | null = null;
+    if (dayRecords.length > 0) {
+      urinationCount = 0;
+      defecationCount = 0;
+      for (const r of dayRecords) {
+        if (r.urination_status === 'present') urinationCount += 1;
+        if (r.defecation_status === 'present') defecationCount += 1;
+      }
     }
     const parsed = parseJapanDateKey(dateKey);
     const xLabel = parsed ? `${parsed.month}/${parsed.day}` : dateKey;

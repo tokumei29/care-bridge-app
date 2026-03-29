@@ -411,7 +411,7 @@ export function MealRecordsListScreen() {
                     </Text>
                     <Text style={[styles.chartSub, { color: c.textSecondary }]}>
                       グラフは日本時間の今日までの直近7暦日です。主食・副食は間食を除く各食事の量（0〜10）をその日の記録数で割った1日の平均、水分はその日の
-                      ml 合計です。記録がない日は点が出ませんが、前後の日に値があれば線で結びます。
+                      ml 合計です。記録がない日は点が出ませんが、前後の日に値があれば点線で結びます（隣の日どうしは実線）。
                     </Text>
 
                     {records.length === 0 ? (

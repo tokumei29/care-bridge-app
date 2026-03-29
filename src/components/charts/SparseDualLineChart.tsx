@@ -3,13 +3,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, Line, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 
 import {
+  SPARSE_CHART_GAP_STROKE_DASHARRAY,
+  buildSparseLineSegmentsAcrossGaps,
   buildYTicks,
   defaultFormatYLabel,
   PAD_BOTTOM,
   PAD_LEFT,
   PAD_RIGHT,
   PAD_TOP,
-  polylineSegmentsAcrossGaps,
 } from '@/components/charts/chartLayoutUtils';
 
 export type SparseDualLineChartPoint = {
@@ -35,7 +36,8 @@ export type SparseDualLineChartProps = {
 };
 
 /**
- * 欠測のある 2 系列（最高血圧・最低血圧など）。中間スロットが欠測でも有効点同士を結ぶ。
+ * 欠測のある 2 系列（最高血圧・最低血圧・排尿/排便件数など）。中間スロットが欠測でも有効点同士を結ぶ。
+ * 隣接以外をまたぐ区間は点線。
  */
 export function SparseDualLineChart({
   points,
@@ -88,17 +90,17 @@ export function SparseDualLineChart({
   }, [maxV, minV, points.length, yTickCount, yTickSnap]);
 
   const segmentsA = useMemo(() => {
-    if (points.length === 0) return [] as string[];
+    if (points.length === 0) return [] as ReturnType<typeof buildSparseLineSegmentsAcrossGaps>;
     const { xs, yAt } = layout;
     const vals = points.map((p) => p.valueA);
-    return polylineSegmentsAcrossGaps(vals, xs, (v) => yAt(v));
+    return buildSparseLineSegmentsAcrossGaps(vals, xs, (v) => yAt(v));
   }, [layout, points]);
 
   const segmentsB = useMemo(() => {
-    if (points.length === 0) return [] as string[];
+    if (points.length === 0) return [] as ReturnType<typeof buildSparseLineSegmentsAcrossGaps>;
     const { xs, yAt } = layout;
     const vals = points.map((p) => p.valueB);
-    return polylineSegmentsAcrossGaps(vals, xs, (v) => yAt(v));
+    return buildSparseLineSegmentsAcrossGaps(vals, xs, (v) => yAt(v));
   }, [layout, points]);
 
   if (points.length === 0) {
@@ -143,26 +145,28 @@ export function SparseDualLineChart({
               />
             );
           })}
-          {segmentsA.map((pts, idx) => (
+          {segmentsA.map((seg, idx) => (
             <Polyline
               key={`sa-${idx}`}
-              points={pts}
+              points={seg.points}
               fill="none"
               stroke={lineColorA}
               strokeWidth={2.75}
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray={seg.bridgesSkippedSlots ? SPARSE_CHART_GAP_STROKE_DASHARRAY : undefined}
             />
           ))}
-          {segmentsB.map((pts, idx) => (
+          {segmentsB.map((seg, idx) => (
             <Polyline
               key={`sb-${idx}`}
-              points={pts}
+              points={seg.points}
               fill="none"
               stroke={lineColorB}
               strokeWidth={2.75}
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray={seg.bridgesSkippedSlots ? SPARSE_CHART_GAP_STROKE_DASHARRAY : undefined}
             />
           ))}
           {points.map((p, i) => (

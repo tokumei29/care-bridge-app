@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
-import { DualLineChart } from '@/components/charts/DualLineChart';
+import { SparseDualLineChart } from '@/components/charts/SparseDualLineChart';
 import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -166,6 +166,15 @@ export function ExcretionRecordsListScreen() {
       })),
     [records]
   );
+
+  const excretionChartMaxY = useMemo(() => {
+    let m = 0;
+    for (const p of excretionWeekDualPoints) {
+      if (p.valueA != null && Number.isFinite(p.valueA)) m = Math.max(m, p.valueA);
+      if (p.valueB != null && Number.isFinite(p.valueB)) m = Math.max(m, p.valueB);
+    }
+    return Math.max(4, Math.ceil(Math.max(m * 1.12, 1)));
+  }, [excretionWeekDualPoints]);
 
   const excretionSelectedDaySummary = useMemo(
     () => buildExcretionDayCountSummary(records, filterDateKey),
@@ -374,9 +383,9 @@ export function ExcretionRecordsListScreen() {
                     直近7日間の排尿・排便（1日あたりの回数）
                   </Text>
                   <Text style={[styles.chartSub, { color: c.textSecondary }]}>
-                    記録の日時（日本時間の日付）ごとに、「排尿: あり」「排便: あり」の件数をそれぞれ合計します。1件で両方ある場合は両方に1回ずつ入ります。今日を含む過去7暦日分です。
+                    記録の日時（日本時間の日付）ごとに、「排尿: あり」「排便: あり」の件数をそれぞれ合計します。1件で両方ある場合は両方に1回ずつ入ります。今日を含む過去7暦日分です。排泄記録が1件もない日は欠測とし、前後の日と点線で結びます（隣の日どうしは実線）。
                   </Text>
-                  <DualLineChart
+                  <SparseDualLineChart
                     points={excretionWeekDualPoints}
                     width={Math.max(1, layout.railInnerWidth - EXCRETION_CHART_CARD_PAD_H * 2)}
                     height={layout.isTablet ? 200 : 176}
@@ -385,6 +394,7 @@ export function ExcretionRecordsListScreen() {
                     gridColor={c.border}
                     axisLabelColor={c.textSecondary}
                     minValue={0}
+                    maxValue={excretionChartMaxY}
                     yTickCount={7}
                     yTickSnap={1}
                   />

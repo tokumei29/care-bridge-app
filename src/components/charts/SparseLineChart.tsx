@@ -3,13 +3,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, Line, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 
 import {
+  SPARSE_CHART_GAP_STROKE_DASHARRAY,
+  buildSparseLineSegmentsAcrossGaps,
   buildYTicks,
   defaultFormatYLabel,
   PAD_BOTTOM,
   PAD_LEFT,
   PAD_RIGHT,
   PAD_TOP,
-  polylineSegmentsAcrossGaps,
 } from '@/components/charts/chartLayoutUtils';
 
 export type SparseLineChartPoint = {
@@ -33,7 +34,8 @@ export type SparseLineChartProps = {
 };
 
 /**
- * 各 X に値が無い場合もある折れ線。中間スロットが欠測でも、前後に値があればその間を直線で結ぶ。
+ * 各 X に値が無い場合もある折れ線。中間スロットが欠測でも、前後に値があればその間を結ぶ。
+ * 隣接以外をまたぐ区間は点線（記録のないスロットを飛ばしていることを示す）。
  */
 export function SparseLineChart({
   points,
@@ -81,11 +83,11 @@ export function SparseLineChart({
     return buildYTicks(minV, maxV, yTickCount, yTickSnap);
   }, [maxV, minV, points.length, yTickCount, yTickSnap]);
 
-  const segmentPointStrings = useMemo(() => {
-    if (points.length === 0) return [] as string[];
+  const lineSegments = useMemo(() => {
+    if (points.length === 0) return [] as ReturnType<typeof buildSparseLineSegmentsAcrossGaps>;
     const { xs, yAt } = layout;
     const vals = points.map((p) => p.value);
-    return polylineSegmentsAcrossGaps(vals, xs, (v) => yAt(v));
+    return buildSparseLineSegmentsAcrossGaps(vals, xs, (v) => yAt(v));
   }, [layout, points]);
 
   const markerIndices = useMemo(() => {
@@ -138,15 +140,16 @@ export function SparseLineChart({
               />
             );
           })}
-          {segmentPointStrings.map((pts, idx) => (
+          {lineSegments.map((seg, idx) => (
             <Polyline
               key={`seg-${idx}`}
-              points={pts}
+              points={seg.points}
               fill="none"
               stroke={lineColor}
               strokeWidth={2.75}
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray={seg.bridgesSkippedSlots ? SPARSE_CHART_GAP_STROKE_DASHARRAY : undefined}
             />
           ))}
           {markerIndices.map((i) => {
