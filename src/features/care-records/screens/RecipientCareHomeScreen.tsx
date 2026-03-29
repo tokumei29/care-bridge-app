@@ -14,6 +14,9 @@ import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useCareRecipients } from '@/features/care-recipients';
 import { AdmissionSoonBanner } from '@/features/care-recipients/components/AdmissionSoonBanner';
+import { NewRecipientDay2RecordHintBanner } from '@/features/care-recipients/components/NewRecipientDay2RecordHintBanner';
+import { NewRecipientDay3RecordHintBanner } from '@/features/care-recipients/components/NewRecipientDay3RecordHintBanner';
+import { NewRecipientRecordHintBanner } from '@/features/care-recipients/components/NewRecipientRecordHintBanner';
 import {
   CARE_RECORD_MENU,
   CARE_RECORD_PATHNAME,
@@ -145,6 +148,21 @@ export function RecipientCareHomeScreen() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator>
             <AdmissionSoonBanner
+              recipient={recipient}
+              c={c}
+              scheme={scheme === 'dark' ? 'dark' : 'light'}
+            />
+            <NewRecipientRecordHintBanner
+              recipient={recipient}
+              c={c}
+              scheme={scheme === 'dark' ? 'dark' : 'light'}
+            />
+            <NewRecipientDay2RecordHintBanner
+              recipient={recipient}
+              c={c}
+              scheme={scheme === 'dark' ? 'dark' : 'light'}
+            />
+            <NewRecipientDay3RecordHintBanner
               recipient={recipient}
               c={c}
               scheme={scheme === 'dark' ? 'dark' : 'light'}

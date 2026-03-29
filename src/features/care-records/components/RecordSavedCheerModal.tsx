@@ -86,7 +86,7 @@ export function RecordSavedCheerModal({ visible, mode, onDismiss }: Props) {
                   />
                 </View>
                 <Text style={[styles.title, { color: c.text }]}>{title}</Text>
-                <Text style={[styles.lead, { color: c.accent }]}>お疲れ様です。また一つ、安心が積み重なりました。</Text>
+                <Text style={[styles.lead, { color: c.accent }]}>お疲れ様です。また一つ、ピースが積み重なりました。</Text>
               </View>
 
               <ScrollView
