@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -8,13 +8,18 @@ import { Text } from '@/components/Themed';
 import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { useCareRecipients } from '@/features/care-recipients';
+import { useExplicitStackBackHeader } from '@/features/care-records/useExplicitStackBackHeader';
 import { supabase } from '@/lib/supabase';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
 import { heroShineGradient } from '@/theme/gradients';
 
 /** 設定・アカウント */
+const HOME_TAB_HREF = '/' as Href;
+
+/** 設定タブのネイティブヘッダー左に「‹ 戻る」（ホームタブへ） */
 export default function SettingsTabScreen() {
   const scheme = useColorScheme();
   const c = getCareBridgeColors(scheme);
@@ -22,6 +27,11 @@ export default function SettingsTabScreen() {
   const layout = useResponsiveLayout();
   const isTablet = layout.isTablet;
   const { isSignedIn, isReady, deleteMyAccountAndSignOut } = useCareRecipients();
+
+  useExplicitStackBackHeader({
+    fallback: HOME_TAB_HREF,
+    tintColor: Colors[scheme === 'dark' ? 'dark' : 'light'].tint,
+  });
   const [signingOut, setSigningOut] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 

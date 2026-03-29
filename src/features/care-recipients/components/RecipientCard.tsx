@@ -6,6 +6,7 @@ import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
+import { formatNextAdmissionJa } from '@/features/care-recipients/recipientAdmissionDate';
 import type { CareRecipient } from '@/features/care-recipients/types';
 import { useAvatarDisplayUri } from '@/lib/useAvatarDisplayUri';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
@@ -108,6 +109,7 @@ export function RecipientCard({ recipient, onOpenCare, onEdit, onDelete }: Props
               ]}>
               {hasAvatar && displayUri && !avatarLoadFailed ? (
                 <Image
+                  key={displayUri}
                   source={{ uri: displayUri }}
                   style={StyleSheet.absoluteFillObject}
                   contentFit="cover"
@@ -140,6 +142,11 @@ export function RecipientCard({ recipient, onOpenCare, onEdit, onDelete }: Props
                 style={styles.chevron}
               />
             </View>
+            {recipient.nextAdmissionOn ? (
+              <Text style={[styles.admissionLine, { color: c.accent, fontSize: subSize }]}>
+                次の入所（目安）: {formatNextAdmissionJa(recipient.nextAdmissionOn)}
+              </Text>
+            ) : null}
             <Text style={[styles.sub, { color: c.textSecondary, fontSize: subSize }]}>
               記録を見る・入力する（タップ）
             </Text>
@@ -239,8 +246,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flexShrink: 1,
   },
+  admissionLine: {
+    marginTop: 10,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   sub: {
-    marginTop: 8,
+    marginTop: 6,
     fontWeight: '500',
     textAlign: 'center',
   },

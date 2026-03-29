@@ -1,7 +1,7 @@
-import { router, type Href } from 'expo-router';
+import { router, type Href, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +20,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { MAX_CARE_RECIPIENTS } from '@/features/care-recipients/constants';
 import { useCareRecipients } from '@/features/care-recipients/CareRecipientsProvider';
 import type { RecipientAvatarSubmit } from '@/features/care-recipients/types';
+import { CareBridgeWelcomeModal } from '@/features/care-recipients/components/CareBridgeWelcomeModal';
+import { NewRecipientGuideModal } from '@/features/care-recipients/components/NewRecipientGuideModal';
 import { NameFormModal } from '@/features/care-recipients/components/NameFormModal';
 import { RecipientCard } from '@/features/care-recipients/components/RecipientCard';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
@@ -46,20 +48,59 @@ export function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [newRecipientGuide, setNewRecipientGuide] = useState<{ open: boolean; name: string }>({
+    open: false,
+    name: '',
+  });
   const editing = editId ? recipients.find((r) => r.id === editId) : undefined;
 
-  const handleAdd = async (payload: { name: string; avatar: RecipientAvatarSubmit }) => {
-    const r = await addRecipient(payload.name, payload.avatar);
+  /** 未ログインでホームタブに来るたび表示（ローカル保存しない。コンセプトの再確認用） */
+  useFocusEffect(
+    useCallback(() => {
+      if (!isReady || isSignedIn) {
+        setWelcomeOpen(false);
+        return;
+      }
+      setWelcomeOpen(true);
+    }, [isReady, isSignedIn])
+  );
+
+  const handleWelcomeDismiss = useCallback(() => {
+    setWelcomeOpen(false);
+  }, []);
+
+  const handleWelcomeLogin = useCallback(() => {
+    setWelcomeOpen(false);
+    router.push('/auth/login');
+  }, []);
+
+  const handleWelcomeSignUp = useCallback(() => {
+    setWelcomeOpen(false);
+    router.push('/auth/sign-up');
+  }, []);
+
+  const handleAdd = async (payload: {
+    name: string;
+    avatar: RecipientAvatarSubmit;
+    nextAdmissionOn: string | null;
+  }) => {
+    const r = await addRecipient(payload.name, payload.avatar, payload.nextAdmissionOn);
     if (!r.ok) {
       Alert.alert('登録できません', r.reason);
       return;
     }
     setAddOpen(false);
+    setNewRecipientGuide({ open: true, name: payload.name.trim() });
   };
 
-  const handleEdit = async (payload: { name: string; avatar: RecipientAvatarSubmit }) => {
+  const handleEdit = async (payload: {
+    name: string;
+    avatar: RecipientAvatarSubmit;
+    nextAdmissionOn: string | null;
+  }) => {
     if (!editId) return;
-    const r = await updateRecipient(editId, payload.name, payload.avatar);
+    const r = await updateRecipient(editId, payload.name, payload.avatar, payload.nextAdmissionOn);
     if (!r.ok) {
       Alert.alert('更新できません', r.reason);
       return;
@@ -263,6 +304,17 @@ export function DashboardScreen() {
         </ScrollView>
       </View>
 
+      <CareBridgeWelcomeModal
+        visible={welcomeOpen}
+        onDismiss={handleWelcomeDismiss}
+        onPressLogin={handleWelcomeLogin}
+        onPressSignUp={handleWelcomeSignUp}
+      />
+      <NewRecipientGuideModal
+        visible={newRecipientGuide.open}
+        recipientName={newRecipientGuide.name}
+        onDismiss={() => setNewRecipientGuide({ open: false, name: '' })}
+      />
       <NameFormModal
         visible={addOpen}
         mode="add"
@@ -277,6 +329,7 @@ export function DashboardScreen() {
         title="登録を編集"
         initialName={editing?.name ?? ''}
         initialAvatarUrl={editing?.avatarUrl ?? null}
+        initialNextAdmissionOn={editing?.nextAdmissionOn ?? null}
         submitLabel="保存"
         onClose={() => setEditId(null)}
         onSubmit={handleEdit}

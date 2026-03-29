@@ -3,7 +3,10 @@ export type CareRecipientRecord = {
   /** JSON では数値になることがある。null のレコードはクライアントで除外する */
   id: string | number | null;
   name: string;
-  avatar_url: string | null;
+  /** 一覧では付くことが多いが、PATCH 応答などで省略される場合がある */
+  avatar_url?: string | null;
+  /** `YYYY-MM-DD`。未設定は null */
+  next_admission_on?: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -19,4 +22,6 @@ export type CareRecipientWritePayload = {
   name: string;
   /** Supabase 等にアップロード済みの画像の HTTPS URL。未送信・削除時は null / 省略 */
   avatar_url?: string | null;
+  /** 次の入所日（目安）。未設定・クリアは null */
+  next_admission_on?: string | null;
 };

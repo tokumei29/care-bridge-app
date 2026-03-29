@@ -31,12 +31,14 @@ type CareRecipientsContextValue = {
   refreshRecipients: () => Promise<void>;
   addRecipient: (
     name: string,
-    avatar: RecipientAvatarSubmit
+    avatar: RecipientAvatarSubmit,
+    nextAdmissionOn: string | null
   ) => Promise<{ ok: true } | { ok: false; reason: string }>;
   updateRecipient: (
     id: string,
     name: string,
-    avatar: RecipientAvatarSubmit
+    avatar: RecipientAvatarSubmit,
+    nextAdmissionOn: string | null
   ) => Promise<{ ok: true } | { ok: false; reason: string }>;
   removeRecipient: (id: string) => Promise<void>;
   getRecipientById: (id: string) => CareRecipient | undefined;
@@ -47,6 +49,44 @@ type CareRecipientsContextValue = {
 };
 
 const CareRecipientsContext = createContext<CareRecipientsContextValue | null>(null);
+
+function normalizeNextAdmissionOn(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const t = raw.trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : null;
+}
+
+/**
+ * 作成・更新 API の JSON で `avatar_url` が省略されると `undefined` になり、
+ * そのまま正規化すると null 扱いで一覧のアバターが消える。キー省略時は送信直前の値を維持する。
+ */
+function avatarFromWriteResponse(record: CareRecipientRecord, fallback: string | null): string | null {
+  if (record.avatar_url === undefined) {
+    return fallback;
+  }
+  if (record.avatar_url === null) return null;
+  const s = String(record.avatar_url).trim();
+  return s !== '' ? s : null;
+}
+
+function nextAdmissionFromWriteResponse(record: CareRecipientRecord, fallback: string | null): string | null {
+  if (record.next_admission_on === undefined) {
+    return fallback;
+  }
+  return normalizeNextAdmissionOn(record.next_admission_on);
+}
+
+function mergeRecipientFromWriteResponse(
+  base: CareRecipient,
+  record: CareRecipientRecord,
+  fallbacks: { avatarUrl: string | null; nextAdmissionOn: string | null }
+): CareRecipient {
+  return {
+    ...base,
+    avatarUrl: avatarFromWriteResponse(record, fallbacks.avatarUrl),
+    nextAdmissionOn: nextAdmissionFromWriteResponse(record, fallbacks.nextAdmissionOn),
+  };
+}
 
 function normalizeCareRecipient(r: CareRecipientRecord): CareRecipient | null {
   if (r.id == null) return null;
@@ -61,6 +101,7 @@ function normalizeCareRecipient(r: CareRecipientRecord): CareRecipient | null {
     name: r.name,
     createdAt: r.created_at,
     avatarUrl,
+    nextAdmissionOn: normalizeNextAdmissionOn(r.next_admission_on),
   };
 }
 
@@ -228,7 +269,8 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
   const addRecipient = useCallback(
     async (
       name: string,
-      avatar: RecipientAvatarSubmit
+      avatar: RecipientAvatarSubmit,
+      nextAdmissionOn: string | null
     ): Promise<{ ok: true } | { ok: false; reason: string }> => {
       const v = validateName(name);
       if (!v.ok) return v;
@@ -242,22 +284,37 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
       }
 
       try {
-        const created = await api.create({ name: v.name, avatar_url: null });
+        const created = await api.create({
+          name: v.name,
+          avatar_url: null,
+          next_admission_on: nextAdmissionOn,
+        });
         const createdNorm = normalizeCareRecipient(created);
         if (!createdNorm) {
           return { ok: false, reason: 'サーバー応答に ID がありません。しばらくしてから再度お試しください。' };
         }
 
-        let avatarUrl: string | null = created.avatar_url;
+        let avatarUrl: string | null =
+          typeof created.avatar_url === 'string' && created.avatar_url.trim() !== ''
+            ? created.avatar_url.trim()
+            : null;
         if (avatar.mode === 'picked') {
           try {
             avatarUrl = await uploadRecipientAvatarToSupabase(avatar.tempUri, createdNorm.id);
-            const updated = await api.update(createdNorm.id, { name: v.name, avatar_url: avatarUrl });
-            const updatedNorm = normalizeCareRecipient(updated);
-            if (!updatedNorm) {
+            const updated = await api.update(createdNorm.id, {
+              name: v.name,
+              avatar_url: avatarUrl,
+              next_admission_on: nextAdmissionOn,
+            });
+            const updatedNormBase = normalizeCareRecipient(updated);
+            if (!updatedNormBase) {
               await refreshRecipients();
               return { ok: false, reason: '更新後のデータを読み取れませんでした。一覧を確認してください。' };
             }
+            const updatedNorm = mergeRecipientFromWriteResponse(updatedNormBase, updated, {
+              avatarUrl,
+              nextAdmissionOn,
+            });
             setRecipients((prev) =>
               sortRecipients([...prev.filter((r) => r.id !== updatedNorm.id), updatedNorm])
             );
@@ -282,7 +339,8 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
     async (
       id: string,
       name: string,
-      avatar: RecipientAvatarSubmit
+      avatar: RecipientAvatarSubmit,
+      nextAdmissionOn: string | null
     ): Promise<{ ok: true } | { ok: false; reason: string }> => {
       const v = validateName(name);
       if (!v.ok) return v;
@@ -303,12 +361,20 @@ export function CareRecipientsProvider({ children }: { children: React.ReactNode
           avatarUrl = current.avatarUrl;
         }
 
-        const updated = await api.update(id, { name: v.name, avatar_url: avatarUrl });
-        const updatedNorm = normalizeCareRecipient(updated);
-        if (!updatedNorm) {
+        const updated = await api.update(id, {
+          name: v.name,
+          avatar_url: avatarUrl,
+          next_admission_on: nextAdmissionOn,
+        });
+        const updatedNormBase = normalizeCareRecipient(updated);
+        if (!updatedNormBase) {
           await refreshRecipients();
           return { ok: false, reason: '更新後のデータを読み取れませんでした。一覧を確認してください。' };
         }
+        const updatedNorm = mergeRecipientFromWriteResponse(updatedNormBase, updated, {
+          avatarUrl,
+          nextAdmissionOn,
+        });
         setRecipients((prev) =>
           sortRecipients(prev.map((r) => (r.id === id ? updatedNorm : r)))
         );

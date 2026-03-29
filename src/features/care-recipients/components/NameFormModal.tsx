@@ -5,10 +5,12 @@ import { Image } from 'expo-image';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Dimensions,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -17,12 +19,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
+import { NextAdmissionDateField } from '@/features/care-recipients/components/NextAdmissionDateField';
 import { MAX_NAME_LENGTH } from '@/features/care-recipients/constants';
+import { parseNextAdmissionOnInput } from '@/features/care-recipients/recipientAdmissionDate';
 import type { RecipientAvatarSubmit } from '@/features/care-recipients/types';
 import { useAvatarDisplayUri } from '@/lib/useAvatarDisplayUri';
 import { useResponsiveLayout } from '@/lib/useResponsiveLayout';
 import { getCareBridgeColors } from '@/theme/careBridge';
 import { ctaGradient } from '@/theme/gradients';
+
+export type RecipientNameFormSubmitPayload = {
+  name: string;
+  avatar: RecipientAvatarSubmit;
+  /** `YYYY-MM-DD` または null（未入力・クリア） */
+  nextAdmissionOn: string | null;
+};
 
 type Props = {
   visible: boolean;
@@ -31,9 +42,11 @@ type Props = {
   initialName?: string;
   /** 既存の顔写真 URL（編集時・API の avatar_url） */
   initialAvatarUrl?: string | null;
+  /** 次の入所日 `YYYY-MM-DD`。追加時は null でよい */
+  initialNextAdmissionOn?: string | null;
   submitLabel: string;
   onClose: () => void;
-  onSubmit: (payload: { name: string; avatar: RecipientAvatarSubmit }) => void | Promise<void>;
+  onSubmit: (payload: RecipientNameFormSubmitPayload) => void | Promise<void>;
 };
 
 function buildAvatarPayload(
@@ -60,6 +73,7 @@ export function NameFormModal({
   mode,
   initialName = '',
   initialAvatarUrl = null,
+  initialNextAdmissionOn = null,
   submitLabel,
   onClose,
   onSubmit,
@@ -70,18 +84,22 @@ export function NameFormModal({
   const insets = useSafeAreaInsets();
   const layout = useResponsiveLayout();
   const [value, setValue] = useState(initialName);
+  const [nextAdmissionIso, setNextAdmissionIso] = useState<string | null>(null);
   const [stagedPickUri, setStagedPickUri] = useState<string | null>(null);
   const [cleared, setCleared] = useState(false);
   const [originalPersistedUri, setOriginalPersistedUri] = useState<string | null>(null);
 
+  const scrollMaxH = Math.round(Dimensions.get('window').height * 0.68);
+
   useEffect(() => {
     if (visible) {
       setValue(initialName);
+      setNextAdmissionIso(initialNextAdmissionOn ?? null);
       setStagedPickUri(null);
       setCleared(false);
       setOriginalPersistedUri(initialAvatarUrl ?? null);
     }
-  }, [visible, initialName, initialAvatarUrl]);
+  }, [visible, initialName, initialAvatarUrl, initialNextAdmissionOn]);
 
   const remotePreviewInput = stagedPickUri || cleared ? null : originalPersistedUri;
   const resolvedRemote = useAvatarDisplayUri(remotePreviewInput);
@@ -91,8 +109,13 @@ export function NameFormModal({
   const previewSize = Math.min(previewCap, Math.max(112, Math.round(layout.railInnerWidth * 0.42)));
 
   const handleSubmit = () => {
+    const parsed = nextAdmissionIso ? parseNextAdmissionOnInput(nextAdmissionIso) : { ok: true as const, value: null };
+    if (!parsed.ok) {
+      Alert.alert('次の入所日', parsed.message);
+      return;
+    }
     const avatar = buildAvatarPayload(mode, stagedPickUri, cleared, originalPersistedUri);
-    void onSubmit({ name: value, avatar });
+    void onSubmit({ name: value, avatar, nextAdmissionOn: parsed.value });
   };
 
   const openLibrary = async () => {
@@ -183,6 +206,11 @@ export function NameFormModal({
                   {title}
                 </Text>
 
+                <ScrollView
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  style={{ maxHeight: scrollMaxH }}
+                  contentContainerStyle={styles.scrollInner}>
                 <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>顔写真（任意）</Text>
                 <Text style={[styles.avatarHint, { color: c.textSecondary }]}>
                   お顔がはっきり分かる写真だと、一覧や記録トップで見分けやすくなります。
@@ -273,6 +301,16 @@ export function NameFormModal({
                 <Text style={[styles.hint, { color: c.textSecondary }]}>
                   {value.length}/{MAX_NAME_LENGTH} 文字
                 </Text>
+
+                <Text style={[styles.sectionLabel, { color: c.textSecondary, marginTop: 16 }]}>
+                  次の入所日（任意）
+                </Text>
+                <Text style={[styles.avatarHint, { color: c.textSecondary }]}>
+                  施設への入所・ショートステイなど、次の予定日が分かる範囲で。未定なら目安の日付でも構いません。未選択のままでも登録できます。
+                </Text>
+                <NextAdmissionDateField value={nextAdmissionIso} onChange={setNextAdmissionIso} />
+
+                </ScrollView>
                 <View style={[styles.actions, isTablet && styles.actionsTablet]}>
                   <Pressable
                     onPress={onClose}
@@ -347,6 +385,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 14,
     marginTop: 4,
+  },
+  scrollInner: {
+    paddingBottom: 8,
   },
   sectionLabel: {
     fontSize: 13,
