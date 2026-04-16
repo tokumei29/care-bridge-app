@@ -247,7 +247,7 @@ export function SleepRecordsListScreen() {
           ListHeaderComponent={
             <ContentRail layout={layout}>
               <Text style={[styles.lead, { color: c.textSecondary }]}>
-                {`${recipient.name}さんの睡眠の記録です（新しい順・日本時間）。夜間の本眠だけでなく、昼寝なども「臥床〜起床」で別レコードにすると、同じ日の記録として一覧・下の週グラフの「1日の合計」にすべて足し込まれます。表示する日付は「臥床した日」に合わせます。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの様子」です。赤い「問題、気になる点あり」は、施設やケアマネに相談したい記録として目立つようにしています。`}
+                {`${recipient.name}さんの睡眠の記録です（新しい順）。夜間の本眠だけでなく、昼寝なども「臥床〜起床」で別レコードにすると、同じ日の記録として一覧・下の週グラフの「1日の合計」にすべて足し込まれます。表示する日付は「臥床した日」に合わせます。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの様子」です。赤い「問題、気になる点あり」は、施設やケアマネに相談したい記録として目立つようにしています。`}
               </Text>
               {!isSignedIn ? (
                 <View
@@ -270,7 +270,7 @@ export function SleepRecordsListScreen() {
                   </Pressable>
                 </View>
                 <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-                  臥床した日（日本時間）がこの日に一致する記録だけ表示します。
+                  臥床した日がこの日に一致する記録だけ表示します。
                 </Text>
                 <Text style={[styles.dateFilterSummary, { color: c.textSecondary }]}>
                   {filterDateKey} ／ {filteredRecords.length} 件表示
@@ -289,7 +289,7 @@ export function SleepRecordsListScreen() {
                   ]}>
                   <Text style={[styles.chartTitle, { color: c.text }]}>直近7日間の1日あたり睡眠時間（合計）</Text>
                   <Text style={[styles.chartSub, { color: c.textSecondary }]}>
-                    各日の値は、その日に「臥床した」記録すべての（起床−臥床）を足し合わせた1日の総睡眠時間です。夜間の睡眠に加え、昼寝なども別レコードで登録していれば同じ日にまとめて含まれます。今日を含む過去7暦日分です。
+                    各日の値は、その日に「臥床した」記録すべての（起床−臥床）を足し合わせた1日の総睡眠時間です。夜間の睡眠に加え、昼寝なども別レコードで登録していれば同じ日にまとめて含まれます。今日を含む過去7日分です。
                   </Text>
                   <SimpleLineChart
                     points={sleepWeekLinePoints}

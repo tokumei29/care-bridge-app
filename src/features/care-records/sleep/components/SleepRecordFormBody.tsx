@@ -40,7 +40,7 @@ export function SleepRecordFormBody({
       contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}>
       <ContentRail layout={layout}>
         <Text style={[styles.lead, { color: c.textSecondary }]}>
-          {`${recipientName}さんの睡眠を記録します。臥床した日付と臥床・起床の時刻（日本時間）、メモと問題の有無を入力してください。夜ふかしで起床が翌日になる場合は、起床の時刻だけ翌日として保存されます。`}
+          {`${recipientName}さんの睡眠を記録します。臥床した日付と臥床・起床の時刻、メモと問題の有無を入力してください。夜ふかしで起床が翌日になる場合は、起床の時刻だけ翌日として保存されます。`}
         </Text>
 
         {!isSignedIn ? (
@@ -55,7 +55,7 @@ export function SleepRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>臥床した日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            就床した日（日本時間）。一覧の日付しぼり込みもこの日に合わせます。
+            就床した日。一覧の日付しぼり込みもこの日に合わせます。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -66,7 +66,7 @@ export function SleepRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>臥床時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            床についた時刻（日本時間）。
+            床についた時刻。
           </Text>
           <TimeWheelsRow
             hour={draft.bedHour}
@@ -81,7 +81,7 @@ export function SleepRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>起床時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            起きた時刻（日本時間）。臥床より前の時刻に見える場合は、自動的に翌日の起床として保存されます。
+            起きた時刻。臥床より前の時刻に見える場合は、自動的に翌日の起床として保存されます。
           </Text>
           <TimeWheelsRow
             hour={draft.wakeHour}

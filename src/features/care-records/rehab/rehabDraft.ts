@@ -84,7 +84,7 @@ export function buildRehabSummaryText(draft: RehabRecordDraft, recipientName: st
   const lines = [
     `${recipientName}さん`,
     '',
-    `日付（日本時間）: ${draft.dateKey}`,
+    `日付: ${draft.dateKey}`,
     `時間: ${sh}:${sm} 〜 ${eh}:${em}`,
     `そのときの様子: ${PRE_SUBMIT_ISSUE_LABEL[draft.preSubmitIssue]}`,
     draft.content.trim() ? `行った内容: ${draft.content.trim()}` : '行った内容: （なし）',

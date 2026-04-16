@@ -283,7 +283,7 @@ export function ExcretionRecordsListScreen() {
           ListHeaderComponent={
             <ContentRail layout={layout}>
               <Text style={[styles.lead, { color: c.textSecondary }]}>
-                {`${recipient.name}さんの排泄の記録です（新しい順・日本時間）。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの排泄の様子」です。赤い「問題、気になる点あり」（警告マーク付き）は、施設やケアマネに相談したい記録として目立つようにしています。`}
+                {`${recipient.name}さんの排泄の記録です（新しい順）。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの排泄の様子」です。赤い「問題、気になる点あり」（警告マーク付き）は、施設やケアマネに相談したい記録として目立つようにしています。`}
               </Text>
               {!isSignedIn ? (
                 <View
@@ -306,7 +306,7 @@ export function ExcretionRecordsListScreen() {
                   </Pressable>
                 </View>
                 <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-                  開いたときは今日（日本時間）の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
+                  開いたときは今日の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
                 </Text>
                 <Text style={[styles.dateFilterSummary, { color: c.textSecondary }]}>
                   {filterDateKey} ／ {filteredRecords.length} 件表示
@@ -383,7 +383,7 @@ export function ExcretionRecordsListScreen() {
                     直近7日間の排尿・排便（1日あたりの回数）
                   </Text>
                   <Text style={[styles.chartSub, { color: c.textSecondary }]}>
-                    記録の日時（日本時間の日付）ごとに、「排尿: あり」「排便: あり」の件数をそれぞれ合計します。1件で両方ある場合は両方に1回ずつ入ります。今日を含む過去7暦日分です。排泄記録が1件もない日は欠測とし、前後の日と点線で結びます（隣の日どうしは実線）。
+                    記録の日時ごとに、「排尿: あり」「排便: あり」の件数をそれぞれ合計します。1件で両方ある場合は両方に1回ずつ入ります。今日を含む過去7日分です。排泄記録が1件もない日は欠測とし、前後の日と点線で結びます（隣の日どうしは実線）。
                   </Text>
                   <SparseDualLineChart
                     points={excretionWeekDualPoints}

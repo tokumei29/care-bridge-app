@@ -205,7 +205,7 @@ export function OtherNotesRecordsListScreen() {
           ListHeaderComponent={
             <ContentRail layout={layout}>
               <Text style={[styles.lead, { color: c.textSecondary }]}>
-                {`${recipient.name}さんの「認知症の様子、その他気づき」の記録です（新しい順・日本時間）。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの様子」です。赤い「問題、気になる点あり」（警告マーク付き）は、施設やケアマネに相談したい記録として目立つようにしています。`}
+                {`${recipient.name}さんの「認知症の様子、その他気づき」の記録です（新しい順）。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの様子」です。赤い「問題、気になる点あり」（警告マーク付き）は、施設やケアマネに相談したい記録として目立つようにしています。`}
               </Text>
               {!isSignedIn ? (
                 <View
@@ -228,7 +228,7 @@ export function OtherNotesRecordsListScreen() {
                   </Pressable>
                 </View>
                 <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-                  開いたときは今日（日本時間）の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
+                  開いたときは今日の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
                 </Text>
                 <Text style={[styles.dateFilterSummary, { color: c.textSecondary }]}>
                   {filterDateKey} ／ {filteredRecords.length} 件表示

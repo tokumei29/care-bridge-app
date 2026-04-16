@@ -85,7 +85,7 @@ export function buildImageMemoSummaryText(draft: ImageMemoRecordDraft, recipient
   const lines = [
     `${recipientName}さん`,
     '',
-    `日付・時刻（日本時間）: ${draft.dateKey} ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`,
+    `日付・時刻: ${draft.dateKey} ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`,
     `画像: ${img}`,
     `そのときの様子: ${PRE_SUBMIT_ISSUE_LABEL[draft.preSubmitIssue]}`,
     draft.memo.trim() ? `メモ: ${draft.memo.trim()}` : 'メモ: （なし）',

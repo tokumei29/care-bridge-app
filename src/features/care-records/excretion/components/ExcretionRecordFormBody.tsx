@@ -55,7 +55,7 @@ export function ExcretionRecordFormBody({
       contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}>
       <ContentRail layout={layout}>
         <Text style={[styles.lead, { color: c.textSecondary }]}>
-          {`${recipientName}さんの排泄を記録します。日付・時刻（日本時間）を選び、排尿・排便の有無と量、便の状態、メモを入力してください。`}
+          {`${recipientName}さんの排泄を記録します。日付・時刻を選び、排尿・排便の有無と量、便の状態、メモを入力してください。`}
         </Text>
 
         {!isSignedIn ? (
@@ -70,7 +70,7 @@ export function ExcretionRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            いつの記録か（日本時間）。初期値は今日です。
+            いつの記録か。初期値は今日です。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -81,7 +81,7 @@ export function ExcretionRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            おおよその時刻（日本時間）。初期値は現在時刻です。
+            おおよその時刻。初期値は現在時刻です。
           </Text>
           <TimeWheelsRow
             hour={draft.hour}

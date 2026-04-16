@@ -88,7 +88,7 @@ export function buildMealSummaryText(draft: MealRecordDraft, recipientName: stri
   const lines = [
     `${recipientName}さん`,
     '',
-    `日付（日本時間）: ${draft.dateKey}`,
+    `日付: ${draft.dateKey}`,
     `時刻: ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`,
     `食事: ${MEAL_SLOT_LABEL[draft.mealSlot]}`,
   ];

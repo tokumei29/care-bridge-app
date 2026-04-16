@@ -45,7 +45,7 @@ export function RehabRecordFormBody({
       contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}>
       <ContentRail layout={layout}>
         <Text style={[styles.lead, { color: c.textSecondary }]}>
-          {`${recipientName}さんのリハビリ活動を記録します。日付・開始・終了（日本時間）、内容とメモ、問題の有無を入力してください。`}
+          {`${recipientName}さんのリハビリ活動を記録します。日付・開始・終了、内容とメモ、問題の有無を入力してください。`}
         </Text>
 
         {!isSignedIn ? (
@@ -60,7 +60,7 @@ export function RehabRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            いつの記録か（日本時間）。初期値は今日です。
+            いつの記録か。初期値は今日です。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -71,7 +71,7 @@ export function RehabRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>開始時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            リハビリ活動を始めた時刻（日本時間）。
+            リハビリ活動を始めた時刻。
           </Text>
           <TimeWheelsRow
             hour={draft.startHour}
@@ -86,7 +86,7 @@ export function RehabRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>終了時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            活動を終えた時刻（日本時間）。開始以降にしてください。
+            活動を終えた時刻。開始以降にしてください。
           </Text>
           <TimeWheelsRow
             hour={draft.endHour}

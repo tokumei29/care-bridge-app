@@ -45,7 +45,7 @@ export function OtherNoteRecordFormBody({
       contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}>
       <ContentRail layout={layout}>
         <Text style={[styles.lead, { color: c.textSecondary }]}>
-          {`${recipientName}さんの「認知症の様子」と「その他の気づき」を記録します。気づいた日時（日本時間）、様子の記述、補足メモ、問題の有無を入力してください。`}
+          {`${recipientName}さんの「認知症の様子」と「その他の気づき」を記録します。気づいた日時、様子の記述、補足メモ、問題の有無を入力してください。`}
         </Text>
 
         {!isSignedIn ? (
@@ -60,7 +60,7 @@ export function OtherNoteRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            いつの観察・気づきか（日本時間）。初期値は今日です。
+            いつの観察・気づきか。初期値は今日です。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -71,7 +71,7 @@ export function OtherNoteRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            おおよその時刻（日本時間）。初期値は現在時刻です。
+            おおよその時刻。初期値は現在時刻です。
           </Text>
           <TimeWheelsRow
             hour={draft.hour}

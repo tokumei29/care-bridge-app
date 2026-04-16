@@ -58,7 +58,7 @@ export function MealRecordFormBody({
         <Text style={[styles.lead, { color: c.textSecondary }]}>
           {isSnack
             ? `${recipientName}さんの間食を記録します。日付・時刻を選んだあと、メモに食べたものや様子を書いてください（主食・副食の量は表示しません）。`
-            : `${recipientName}さんの食事を記録します。まず「いつの記録か」の日付・時刻（日本時間）を選び、そのあと食事の内容を入力してください。`}
+            : `${recipientName}さんの食事を記録します。まず「いつの記録か」の日付・時刻を選び、そのあと食事の内容を入力してください。`}
         </Text>
 
         {!isSignedIn ? (
@@ -73,7 +73,7 @@ export function MealRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            いつの食事か（日本時間）。初期値は今日です。
+            いつの食事か。初期値は今日です。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -84,7 +84,7 @@ export function MealRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            食事のおおよその時刻（日本時間）。初期値は現在時刻です。
+            食事のおおよその時刻。初期値は現在時刻です。
           </Text>
           <TimeWheelsRow
             hour={draft.hour}

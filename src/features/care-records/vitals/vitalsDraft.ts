@@ -118,7 +118,7 @@ export function buildVitalSummaryText(draft: VitalRecordDraft, recipientName: st
   const lines = [
     `${recipientName}さん`,
     '',
-    `日付（日本時間）: ${draft.dateKey}`,
+    `日付: ${draft.dateKey}`,
     `時刻: ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`,
     `体温: ${t != null ? `${t}℃` : '（未入力）'}`,
     `血圧: ${sys != null && dia != null ? `${sys}／${dia} mmHg` : '（未入力）'}`,

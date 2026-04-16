@@ -213,7 +213,7 @@ export function ImageMemosRecordsListScreen() {
           ListHeaderComponent={
             <ContentRail layout={layout}>
               <Text style={[styles.lead, { color: c.textSecondary }]}>
-                {`${recipient.name}さんの画像メモ一覧です（新しい順・日本時間）。日常の様子や、ケガ・褥瘡の経過など介護に必要な写真を日時・メモ・問題の有無とともに確認できます。各行の「編集」で修正、「削除」で消せます。`}
+                {`${recipient.name}さんの画像メモ一覧です（新しい順）。日常の様子や、ケガ・褥瘡の経過など介護に必要な写真を日時・メモ・問題の有無とともに確認できます。各行の「編集」で修正、「削除」で消せます。`}
               </Text>
               {isSignedIn ? (
                 <Text style={[styles.thumbTapHint, { color: c.accent }]}>サムネイルをタップすると、写真を拡大表示できます。</Text>
@@ -239,7 +239,7 @@ export function ImageMemosRecordsListScreen() {
                   </Pressable>
                 </View>
                 <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-                  開いたときは今日（日本時間）の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
+                  開いたときは今日の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
                 </Text>
                 <Text style={[styles.dateFilterSummary, { color: c.textSecondary }]}>
                   {filterDateKey} ／ {filteredRecords.length} 件表示

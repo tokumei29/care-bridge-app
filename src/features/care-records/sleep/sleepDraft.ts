@@ -125,7 +125,7 @@ export function buildSleepSummaryText(draft: SleepRecordDraft, recipientName: st
   const lines = [
     `${recipientName}さん`,
     '',
-    `臥床の日付（日本時間）: ${draft.dateKey}`,
+    `臥床の日付: ${draft.dateKey}`,
     `臥床: ${bh}:${bm}`,
     `起床: ${wh}:${wm}${crossDay ? '（翌日）' : ''}`,
     ...(totalSleep ? [`睡眠時間の合計: ${totalSleep}`] : []),

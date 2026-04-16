@@ -57,7 +57,7 @@ export function buildBathingSummaryText(draft: BathingRecordDraft, recipientName
   const lines = [
     `${recipientName}さん`,
     '',
-    `日付（日本時間）: ${draft.dateKey}`,
+    `日付: ${draft.dateKey}`,
     `時刻: ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`,
     `そのときの様子: ${PRE_SUBMIT_ISSUE_LABEL[draft.preSubmitIssue]}`,
     draft.memo.trim() ? `気づき・様子: ${draft.memo.trim()}` : '気づき・様子: （なし）',

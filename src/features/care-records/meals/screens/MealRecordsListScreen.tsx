@@ -261,7 +261,7 @@ export function MealRecordsListScreen() {
             ListHeaderComponent={
               <ContentRail layout={layout}>
                 <Text style={[styles.lead, { color: c.textSecondary }]}>
-                  {`${recipient.name}さんのこれまでの記録です（新しい順・日本時間）。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの食事の様子」です。赤い「問題、気になる点あり」（警告マーク付き）は、施設やケアマネに相談したい記録として目立つようにしています。`}
+                  {`${recipient.name}さんのこれまでの記録です（新しい順）。各行の「編集」で修正、「削除」で消せます。新規は右上の「＋ 新規」か、被介護者トップの「入力」から開けます。\n\nタグは「そのときの食事の様子」です。赤い「問題、気になる点あり」（警告マーク付き）は、施設やケアマネに相談したい記録として目立つようにしています。`}
                 </Text>
                 {!isSignedIn ? (
                   <View
@@ -284,7 +284,7 @@ export function MealRecordsListScreen() {
                     </Pressable>
                   </View>
                   <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-                    開いたときは今日（日本時間）の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
+                    開いたときは今日の記録だけ表示します。カレンダーで日付を変えると、その日の記録に切り替わります。
                   </Text>
                   <Text style={[styles.dateFilterSummary, { color: c.textSecondary }]}>
                     {filterDateKey} ／ {filteredRecords.length} 件表示
@@ -407,10 +407,10 @@ export function MealRecordsListScreen() {
                       },
                     ]}>
                     <Text style={[styles.chartTitle, { color: c.text }]}>
-                      食事量・水分（直近7日・日本時間の暦日）
+                      食事量・水分（直近7日）
                     </Text>
                     <Text style={[styles.chartSub, { color: c.textSecondary }]}>
-                      グラフは日本時間の今日までの直近7暦日です。主食・副食は間食を除く各食事の量（0〜10）をその日の記録数で割った1日の平均、水分はその日の
+                      グラフは今日までの直近7日です。主食・副食は間食を除く各食事の量（0〜10）をその日の記録数で割った1日の平均、水分はその日の
                       ml 合計です。記録がない日は点が出ませんが、前後の日に値があれば点線で結びます（隣の日どうしは実線）。
                     </Text>
 

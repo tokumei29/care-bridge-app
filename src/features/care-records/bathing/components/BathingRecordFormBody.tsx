@@ -40,7 +40,7 @@ export function BathingRecordFormBody({
       contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}>
       <ContentRail layout={layout}>
         <Text style={[styles.lead, { color: c.textSecondary }]}>
-          {`${recipientName}さんの入浴を記録します。日付・時刻（日本時間）と、気づいたことや様子をメモに書いてください。`}
+          {`${recipientName}さんの入浴を記録します。日付・時刻と、気づいたことや様子をメモに書いてください。`}
         </Text>
 
         {!isSignedIn ? (
@@ -55,7 +55,7 @@ export function BathingRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            いつの記録か（日本時間）。初期値は今日です。
+            いつの記録か。初期値は今日です。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -66,7 +66,7 @@ export function BathingRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            おおよその時刻（日本時間）。初期値は現在時刻です。
+            おおよその時刻。初期値は現在時刻です。
           </Text>
           <TimeWheelsRow
             hour={draft.hour}

@@ -65,7 +65,7 @@ export function buildOtherNoteSummaryText(draft: OtherNoteRecordDraft, recipient
   const lines = [
     `${recipientName}さん`,
     '',
-    `日付・時刻（日本時間）: ${draft.dateKey} ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`,
+    `日付・時刻: ${draft.dateKey} ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`,
     `そのときの様子: ${PRE_SUBMIT_ISSUE_LABEL[draft.preSubmitIssue]}`,
     draft.observation.trim()
       ? `認知症の様子: ${draft.observation.trim()}`

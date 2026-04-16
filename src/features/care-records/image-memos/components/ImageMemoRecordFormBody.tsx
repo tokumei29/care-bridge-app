@@ -154,7 +154,7 @@ export function ImageMemoRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            撮影・気づきの基準にしたい日（日本時間）。初期値は今日です。
+            撮影・気づきの基準にしたい日。初期値は今日です。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -165,7 +165,7 @@ export function ImageMemoRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            おおよその時刻（日本時間）。初期値は現在時刻です。
+            おおよその時刻。初期値は現在時刻です。
           </Text>
           <TimeWheelsRow
             hour={draft.hour}

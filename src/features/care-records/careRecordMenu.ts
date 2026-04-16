@@ -115,7 +115,7 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
     screenHeaderTitle: '新しく記録',
     screenHeading: 'リハビリ活動の入力',
     screenDescription:
-      '日付・開始・終了時刻（日本時間）、行った内容・メモ、問題の有無を入力して保存します。',
+      '日付・開始・終了時刻、行った内容・メモ、問題の有無を入力して保存します。',
   },
   {
     segment: 'sleep-new',
@@ -126,7 +126,7 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
     screenHeaderTitle: '新しく記録',
     screenHeading: '睡眠の入力',
     screenDescription:
-      '臥床した日付と臥床・起床時刻（日本時間）、メモ、問題の有無を入力して保存します。',
+      '臥床した日付と臥床・起床時刻、メモ、問題の有無を入力して保存します。',
   },
   {
     segment: 'notes-new',
@@ -137,7 +137,7 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
     screenHeaderTitle: '新しく記録',
     screenHeading: '認知症の様子、その他気づき',
     screenDescription:
-      '気づいた日時（日本時間）、認知症の様子（平穏・不穏など）、その他の気づき、問題の有無を入力して保存します。',
+      '気づいた日時、認知症の様子（平穏・不穏など）、その他の気づき、問題の有無を入力して保存します。',
   },
   {
     segment: 'image-memos-new',
@@ -148,7 +148,7 @@ export const CARE_RECORD_MENU: CareRecordMenuItem[] = [
     screenHeaderTitle: '新しく記録',
     screenHeading: '画像メモ',
     screenDescription:
-      '日常の様子や、ケガ・褥瘡の経過など介護に必要な写真を、日時（日本時間）・メモ・問題の有無とともに保存します。',
+      '日常の様子や、ケガ・褥瘡の経過など介護に必要な写真を、日時・メモ・問題の有無とともに保存します。',
   },
   {
     segment: 'meals',

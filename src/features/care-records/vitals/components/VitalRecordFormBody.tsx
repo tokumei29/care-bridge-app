@@ -59,7 +59,7 @@ export function VitalRecordFormBody({
       contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}>
       <ContentRail layout={layout}>
         <Text style={[styles.lead, { color: c.textSecondary }]}>
-          {`${recipientName}さんのバイタルを記録します。日付・時刻（日本時間）を選び、体温・血圧・脈拍・SpO₂・メモを入力してください。体温・血圧・脈拍・SpO₂のうち、どれか1つ以上は必須です。それ以外の未測定の項目は空欄のままで構いません。`}
+          {`${recipientName}さんのバイタルを記録します。日付・時刻を選び、体温・血圧・脈拍・SpO₂・メモを入力してください。体温・血圧・脈拍・SpO₂のうち、どれか1つ以上は必須です。それ以外の未測定の項目は空欄のままで構いません。`}
         </Text>
 
         {!isSignedIn ? (
@@ -74,7 +74,7 @@ export function VitalRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の日付</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            いつの記録か（日本時間）。初期値は今日です。
+            いつの記録か。初期値は今日です。
           </Text>
           <MonthCalendar
             selectedKey={draft.dateKey}
@@ -85,7 +85,7 @@ export function VitalRecordFormBody({
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>記録の時刻</Text>
           <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
-            測定のおおよその時刻（日本時間）。初期値は現在時刻です。
+            測定のおおよその時刻。初期値は現在時刻です。
           </Text>
           <TimeWheelsRow
             hour={draft.hour}
