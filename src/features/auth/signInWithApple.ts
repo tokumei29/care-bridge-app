@@ -1,13 +1,10 @@
 import type { Session } from '@supabase/supabase-js';
+import 'react-native-get-random-values';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { Alert, Platform } from 'react-native';
+import * as uuid from 'uuid';
 
 import { supabase } from '@/lib/supabase';
-
-/**
- * 以下はすべてこの関数の実行時のみ動的 import（トップレベル静的 import 禁止）。
- * 順序: (1) react-native-get-random-values → (2) uuid → (3) expo-crypto → (4) expo-apple-authentication
- * RNGV は uuid より先に必ず評価する。
- */
 
 function showAppleAuthError(stageCode: string, message: string, detail?: string): void {
   const suffix = detail?.trim() ? `\n\n詳細: ${detail.trim()}` : '';
@@ -27,53 +24,12 @@ function isAppleUserCancelled(e: unknown): boolean {
 
 /**
  * rawNonce: 生の UUID 文字列（uuid v4）
- * Apple: SHA256(rawNonce) を nonce に渡す
+ * Apple: rawNonce をそのまま nonce に渡す
  * Supabase signInWithIdToken: nonce に rawNonce を渡す
  */
 export async function signInWithAppleNative(): Promise<{ ok: true; session: Session } | { ok: false }> {
   if (Platform.OS !== 'ios') {
     showAppleAuthError('APPLE_PLATFORM', 'Sign in with Apple は iOS でのみ利用できます。');
-    return { ok: false };
-  }
-
-  // (1) react-native-get-random-values — uuid より先
-  try {
-    await import('react-native-get-random-values');
-  } catch (e: unknown) {
-    showAppleAuthError('RNGV_MODULE', '乱数用ポリフィルを読み込めませんでした。', formatUnknownError(e));
-    return { ok: false };
-  }
-
-  // (2) uuid
-  let uuidMod: typeof import('uuid');
-  try {
-    uuidMod = await import('uuid');
-  } catch (e: unknown) {
-    showAppleAuthError('UUID_MODULE', 'uuid を読み込めませんでした。', formatUnknownError(e));
-    return { ok: false };
-  }
-
-  // (3) expo-crypto（import * as は関数内の動的 import のみ）
-  let expoCrypto: typeof import('expo-crypto');
-  try {
-    expoCrypto = await import('expo-crypto');
-  } catch (e: unknown) {
-    showAppleAuthError('CRYPTO_MODULE', 'expo-crypto を読み込めませんでした。', formatUnknownError(e));
-    return { ok: false };
-  }
-
-  const rawNonce = uuidMod.v4();
-  const hashedNonce = await expoCrypto.digestStringAsync(
-    expoCrypto.CryptoDigestAlgorithm.SHA256,
-    rawNonce
-  );
-
-  // (4) expo-apple-authentication — nonce 準備後に読み込み（ネイティブ初期化をボタン押下後かつ直前に寄せる）
-  let AppleAuthentication: typeof import('expo-apple-authentication');
-  try {
-    AppleAuthentication = await import('expo-apple-authentication');
-  } catch (e: unknown) {
-    showAppleAuthError('APPLE_MODULE', 'Sign in with Apple を読み込めませんでした。', formatUnknownError(e));
     return { ok: false };
   }
 
@@ -83,13 +39,15 @@ export async function signInWithAppleNative(): Promise<{ ok: true; session: Sess
     return { ok: false };
   }
 
+  const rawNonce = uuid.v4().toString();
+
   try {
     const credential = await AppleAuthentication.signInAsync({
       requestedScopes: [
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
-      nonce: hashedNonce,
+      nonce: rawNonce,
     });
 
     const identityToken = credential.identityToken;
