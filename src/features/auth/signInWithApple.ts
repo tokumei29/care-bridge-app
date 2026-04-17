@@ -27,8 +27,8 @@ function createRawNonce(): string {
 }
 
 /**
- * rawNonce: 生の UUID 文字列（uuid v4）
- * Apple: rawNonce をそのまま nonce に渡す
+ * rawNonce: 生の nonce 文字列
+ * Apple: SHA256(rawNonce) を nonce に渡す
  * Supabase signInWithIdToken: nonce に rawNonce を渡す
  */
 export async function signInWithAppleNative(): Promise<{ ok: true; session: Session } | { ok: false }> {
@@ -45,7 +45,19 @@ export async function signInWithAppleNative(): Promise<{ ok: true; session: Sess
     return { ok: false };
   }
 
+  let expoCrypto: typeof import('expo-crypto');
+  try {
+    expoCrypto = await import('expo-crypto');
+  } catch (e: unknown) {
+    showAppleAuthError('CRYPTO_MODULE', 'expo-crypto を読み込めませんでした。', formatUnknownError(e));
+    return { ok: false };
+  }
+
   const rawNonce = createRawNonce();
+  const hashedNonce = await expoCrypto.digestStringAsync(
+    expoCrypto.CryptoDigestAlgorithm.SHA256,
+    rawNonce
+  );
 
   try {
     const credential = await AppleAuthentication.signInAsync({
@@ -53,7 +65,7 @@ export async function signInWithAppleNative(): Promise<{ ok: true; session: Sess
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
-      nonce: rawNonce,
+      nonce: hashedNonce,
     });
 
     const identityToken = credential.identityToken;
