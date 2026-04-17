@@ -1,8 +1,5 @@
 import type { Session } from '@supabase/supabase-js';
-import 'react-native-get-random-values';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { Alert, Platform } from 'react-native';
-import * as uuid from 'uuid';
 
 import { supabase } from '@/lib/supabase';
 
@@ -30,6 +27,29 @@ function isAppleUserCancelled(e: unknown): boolean {
 export async function signInWithAppleNative(): Promise<{ ok: true; session: Session } | { ok: false }> {
   if (Platform.OS !== 'ios') {
     showAppleAuthError('APPLE_PLATFORM', 'Sign in with Apple は iOS でのみ利用できます。');
+    return { ok: false };
+  }
+
+  try {
+    await import('react-native-get-random-values');
+  } catch (e: unknown) {
+    showAppleAuthError('RNGV_MODULE', '乱数用ポリフィルを読み込めませんでした。', formatUnknownError(e));
+    return { ok: false };
+  }
+
+  let uuid: typeof import('uuid');
+  try {
+    uuid = await import('uuid');
+  } catch (e: unknown) {
+    showAppleAuthError('UUID_MODULE', 'uuid を読み込めませんでした。', formatUnknownError(e));
+    return { ok: false };
+  }
+
+  let AppleAuthentication: typeof import('expo-apple-authentication');
+  try {
+    AppleAuthentication = await import('expo-apple-authentication');
+  } catch (e: unknown) {
+    showAppleAuthError('APPLE_MODULE', 'Sign in with Apple を読み込めませんでした。', formatUnknownError(e));
     return { ok: false };
   }
 
