@@ -53,12 +53,6 @@ export async function signInWithAppleNative(): Promise<{ ok: true; session: Sess
     return { ok: false };
   }
 
-  const available = await AppleAuthentication.isAvailableAsync();
-  if (!available) {
-    showAppleAuthError('APPLE_UNAVAILABLE', 'この端末では Sign in with Apple を利用できません。');
-    return { ok: false };
-  }
-
   const rawNonce = uuid.v4().toString();
 
   try {
