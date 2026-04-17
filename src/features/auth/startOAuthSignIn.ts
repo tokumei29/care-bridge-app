@@ -12,7 +12,8 @@ export type OAuthProviderId = 'apple' | 'google';
 export async function startOAuthSignIn(
   provider: OAuthProviderId
 ): Promise<{ ok: true; session: Session } | { ok: false }> {
-  const redirectTo = 'carebridgeapp://';
+  const redirectTo = Linking.createURL('');
+  console.log('Redirect URL:', redirectTo); // デバッグ用ログ
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
@@ -30,6 +31,7 @@ export async function startOAuthSignIn(
   }
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  console.log('WebBrowser result:', result); // デバッグ用ログ
   if (result.type === 'cancel' || result.type === 'dismiss') {
     return { ok: false };
   }
@@ -84,7 +86,7 @@ export async function startOAuthSignIn(
 
   Alert.alert(
     'ログインできません',
-    '認証結果に必要な情報がありません。Supabase の Redirect URLs にこのアプリのスキーム（例: carebridgeapp://）を登録してください。'
+    '認証結果に必要な情報がありません。'
   );
   return { ok: false };
 }
