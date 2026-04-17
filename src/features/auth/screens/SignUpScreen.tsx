@@ -90,6 +90,9 @@ export function SignUpScreen() {
         await new Promise<void>((resolve) => setTimeout(resolve, 500));
         router.replace('/');
       }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      Alert.alert('登録できません', `Apple認証の呼び出しで失敗しました。\n\n${message}`);
     } finally {
       setOauthBusy(null);
     }

@@ -19,6 +19,13 @@ function isAppleUserCancelled(e: unknown): boolean {
   return code === 'ERR_CANCELED' || code === 'ERR_REQUEST_CANCELED';
 }
 
+function createRawNonce(): string {
+  // ネイティブ RNG 依存を避けるため、JSのみで十分な長さの nonce を生成する。
+  const p1 = Math.random().toString(36).slice(2, 12);
+  const p2 = Math.random().toString(36).slice(2, 12);
+  return `${Date.now().toString(36)}-${p1}-${p2}`;
+}
+
 /**
  * rawNonce: 生の UUID 文字列（uuid v4）
  * Apple: rawNonce をそのまま nonce に渡す
@@ -30,21 +37,6 @@ export async function signInWithAppleNative(): Promise<{ ok: true; session: Sess
     return { ok: false };
   }
 
-  try {
-    await import('react-native-get-random-values');
-  } catch (e: unknown) {
-    showAppleAuthError('RNGV_MODULE', '乱数用ポリフィルを読み込めませんでした。', formatUnknownError(e));
-    return { ok: false };
-  }
-
-  let uuid: typeof import('uuid');
-  try {
-    uuid = await import('uuid');
-  } catch (e: unknown) {
-    showAppleAuthError('UUID_MODULE', 'uuid を読み込めませんでした。', formatUnknownError(e));
-    return { ok: false };
-  }
-
   let AppleAuthentication: typeof import('expo-apple-authentication');
   try {
     AppleAuthentication = await import('expo-apple-authentication');
@@ -53,7 +45,7 @@ export async function signInWithAppleNative(): Promise<{ ok: true; session: Sess
     return { ok: false };
   }
 
-  const rawNonce = uuid.v4().toString();
+  const rawNonce = createRawNonce();
 
   try {
     const credential = await AppleAuthentication.signInAsync({
