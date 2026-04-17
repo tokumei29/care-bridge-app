@@ -12,7 +12,7 @@ export type OAuthProviderId = 'apple' | 'google';
 export async function startOAuthSignIn(
   provider: OAuthProviderId
 ): Promise<{ ok: true; session: Session } | { ok: false }> {
-  const redirectTo = Linking.createURL('/');
+  const redirectTo = 'carebridgeapp://';
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
