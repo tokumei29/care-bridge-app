@@ -20,6 +20,12 @@ export function parseErrorMessage(status: number, json: unknown): string {
       return err.join('\n');
     }
   }
+  if (json && typeof json === 'object' && 'error' in json) {
+    const err = (json as { error: unknown }).error;
+    if (typeof err === 'string' && err.trim().length > 0) {
+      return err.trim();
+    }
+  }
   return `リクエストに失敗しました (${status})`;
 }
 

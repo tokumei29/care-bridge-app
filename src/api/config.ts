@@ -34,14 +34,17 @@ function warnLocalhostOnPhysicalDevice(url: string): void {
  * - 開発（__DEV__）で未設定: http://localhost:3000
  */
 export function getApiBaseUrl(): string {
+  const isRelease = typeof __DEV__ !== 'undefined' && !__DEV__;
+  if (isRelease) {
+    return CARE_BRIDGE_API_PRODUCTION_ORIGIN;
+  }
+
   const raw = process.env.EXPO_PUBLIC_API_BASE_URL;
   let url: string;
   if (typeof raw === 'string' && raw.trim().length > 0) {
     url = raw.trim().replace(/\/$/, '');
-  } else if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    url = 'http://localhost:3000';
   } else {
-    url = CARE_BRIDGE_API_PRODUCTION_ORIGIN;
+    url = 'http://localhost:3000';
   }
   warnLocalhostOnPhysicalDevice(url);
   return url;

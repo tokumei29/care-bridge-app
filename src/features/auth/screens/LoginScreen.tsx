@@ -69,8 +69,8 @@ export function LoginScreen() {
     }
   };
 
-  const onOAuthPress = async (provider: 'apple') => {
-    setOauthBusy(provider);
+  const onOAuthPress = async () => {
+    setOauthBusy('apple');
     try {
       const { signInWithAppleNative } = await import('@/features/auth/signInWithApple');
       const result = await signInWithAppleNative();
@@ -105,7 +105,7 @@ export function LoginScreen() {
 
               {Platform.OS === 'ios' ? (
                 <Pressable
-                  onPress={() => void onOAuthPress('apple')}
+                  onPress={() => void onOAuthPress()}
                   disabled={authLocked}
                   style={({ pressed }) => [
                     styles.ssoAppleBtn,

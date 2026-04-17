@@ -80,8 +80,8 @@ export function SignUpScreen() {
     }
   };
 
-  const onOAuthPress = async (provider: 'apple') => {
-    setOauthBusy(provider);
+  const onOAuthPress = async () => {
+    setOauthBusy('apple');
     try {
       const { signInWithAppleNative } = await import('@/features/auth/signInWithApple');
       const result = await signInWithAppleNative();
@@ -116,7 +116,7 @@ export function SignUpScreen() {
 
               {Platform.OS === 'ios' ? (
                 <Pressable
-                  onPress={() => void onOAuthPress('apple')}
+                  onPress={() => void onOAuthPress()}
                   disabled={authLocked}
                   style={({ pressed }) => [
                     styles.ssoAppleBtn,
