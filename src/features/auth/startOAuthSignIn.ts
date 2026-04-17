@@ -9,6 +9,11 @@ WebBrowser.maybeCompleteAuthSession();
 
 export type OAuthProviderId = 'apple' | 'google';
 
+function showOAuthError(stageCode: string, message: string, detail?: string): void {
+  const suffix = detail?.trim() ? `\n\n詳細: ${detail.trim()}` : '';
+  Alert.alert('ログインできません', `[${stageCode}] ${message}${suffix}`);
+}
+
 export async function startOAuthSignIn(
   provider: OAuthProviderId
 ): Promise<{ ok: true; session: Session } | { ok: false }> {
@@ -21,11 +26,11 @@ export async function startOAuthSignIn(
     },
   });
   if (error) {
-    Alert.alert('ログインできません', error.message);
+    showOAuthError('AUTH_START', 'SSOを開始できませんでした。', error.message);
     return { ok: false };
   }
   if (!data?.url) {
-    Alert.alert('ログインできません', '認証URLを取得できませんでした。');
+    showOAuthError('AUTH_URL', '認証URLを取得できませんでした。');
     return { ok: false };
   }
 
@@ -34,7 +39,11 @@ export async function startOAuthSignIn(
     return { ok: false };
   }
   if (result.type !== 'success' || !result.url) {
-    Alert.alert('ログインできません', '認証を完了できませんでした。');
+    showOAuthError(
+      'AUTH_CALLBACK',
+      '認証の戻り先を受け取れませんでした。Supabase の Redirect URL と iOS の URL Scheme 設定を確認してください。',
+      `result.type=${result.type}`
+    );
     return { ok: false };
   }
 
@@ -42,7 +51,7 @@ export async function startOAuthSignIn(
   try {
     parsed = new URL(result.url);
   } catch {
-    Alert.alert('ログインできません', '認証結果のURLを解釈できませんでした。');
+    showOAuthError('AUTH_PARSE', '認証結果のURLを解釈できませんでした。');
     return { ok: false };
   }
 
@@ -57,7 +66,11 @@ export async function startOAuthSignIn(
     hashParams.get('error')?.trim() ||
     hashParams.get('error_code')?.trim();
   if (oauthErr || hashErr) {
-    Alert.alert('ログインできません', oauthErr ?? hashErr ?? '認証を完了できませんでした。');
+    showOAuthError(
+      'AUTH_PROVIDER',
+      'プロバイダ側で認証を完了できませんでした。Apple/Supabase の OAuth 設定を確認してください。',
+      oauthErr ?? hashErr ?? undefined
+    );
     return { ok: false };
   }
 
@@ -66,7 +79,7 @@ export async function startOAuthSignIn(
   if (code) {
     const { data: exchanged, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     if (exchangeError || !exchanged.session) {
-      Alert.alert('ログインできません', exchangeError?.message ?? 'セッションを確立できませんでした。');
+      showOAuthError('AUTH_EXCHANGE', 'セッション交換に失敗しました。', exchangeError?.message);
       return { ok: false };
     }
     return { ok: true, session: exchanged.session };
@@ -81,16 +94,17 @@ export async function startOAuthSignIn(
         refresh_token,
       });
       if (setErr || !setData.session) {
-        Alert.alert('ログインできません', setErr?.message ?? 'セッションを確立できませんでした。');
+        showOAuthError('AUTH_SET_SESSION', 'セッションを確立できませんでした。', setErr?.message);
         return { ok: false };
       }
       return { ok: true, session: setData.session };
     }
   }
 
-  Alert.alert(
-    'ログインできません',
-    '認証結果に必要な情報がありません。'
+  showOAuthError(
+    'AUTH_RESULT_EMPTY',
+    '認証結果に必要な情報がありません。Redirect URL が一致しているか確認してください。',
+    `url=${parsed.origin}${parsed.pathname}`
   );
   return { ok: false };
 }
