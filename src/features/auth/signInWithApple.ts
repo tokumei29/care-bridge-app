@@ -1,13 +1,11 @@
 import type { Session } from '@supabase/supabase-js';
-import * as Crypto from 'expo-crypto';
 import { Alert, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 
 /**
- * `expo-apple-authentication` はログイン画面のバンドル読み込み時に静的 import すると、
- * Android / Web などでネイティブモジュール初期化がクラッシュすることがある。
- * iOS で Apple ボタンを押したときだけ動的 import する。
+ * expo-apple-authentication / expo-crypto / uuid / react-native-get-random-values は
+ * すべて signInWithAppleNative 内で動的 import し、ログイン画面のマウント時にネイティブを触らない。
  */
 
 function showAppleAuthError(stageCode: string, message: string, detail?: string): void {
@@ -28,8 +26,7 @@ function isAppleUserCancelled(e: unknown): boolean {
 
 /**
  * iOS ネイティブの Sign in with Apple。
- * 旧アプリの `uuid` で nonce を作り `signInWithIdToken` に渡す流れと同じで、最後は同じく生 nonce を Supabase に渡す。
- * Apple へ送る値だけ、ASAuthorization の仕様に合わせて **生 nonce の SHA256** にしている（Expo/Apple 推奨。ライブラリが生のまま送っていた例もある）。
+ * 生 nonce は uuid v4。Apple へは生 nonce の SHA256（expo-crypto）。
  */
 export async function signInWithAppleNative(): Promise<{ ok: true; session: Session } | { ok: false }> {
   if (Platform.OS !== 'ios') {
@@ -37,8 +34,30 @@ export async function signInWithAppleNative(): Promise<{ ok: true; session: Sess
     return { ok: false };
   }
 
-  type AppleAuthModule = typeof import('expo-apple-authentication');
-  let AppleAuthentication: AppleAuthModule;
+  try {
+    await import('react-native-get-random-values');
+  } catch (e: unknown) {
+    showAppleAuthError('RNGV_MODULE', '乱数用ポリフィルを読み込めませんでした。', formatUnknownError(e));
+    return { ok: false };
+  }
+
+  let uuidMod: typeof import('uuid');
+  try {
+    uuidMod = await import('uuid');
+  } catch (e: unknown) {
+    showAppleAuthError('UUID_MODULE', 'uuid を読み込めませんでした。', formatUnknownError(e));
+    return { ok: false };
+  }
+
+  let Crypto: typeof import('expo-crypto');
+  try {
+    Crypto = await import('expo-crypto');
+  } catch (e: unknown) {
+    showAppleAuthError('CRYPTO_MODULE', 'expo-crypto を読み込めませんでした。', formatUnknownError(e));
+    return { ok: false };
+  }
+
+  let AppleAuthentication: typeof import('expo-apple-authentication');
   try {
     AppleAuthentication = await import('expo-apple-authentication');
   } catch (e: unknown) {
@@ -52,7 +71,7 @@ export async function signInWithAppleNative(): Promise<{ ok: true; session: Sess
     return { ok: false };
   }
 
-  const rawNonce = Crypto.randomUUID();
+  const rawNonce = uuidMod.v4();
   const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
 
   try {
