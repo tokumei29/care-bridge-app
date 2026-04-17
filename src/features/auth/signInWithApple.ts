@@ -1,9 +1,14 @@
 import type { Session } from '@supabase/supabase-js';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { Alert, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+
+/**
+ * `expo-apple-authentication` はログイン画面のバンドル読み込み時に静的 import すると、
+ * Android / Web などでネイティブモジュール初期化がクラッシュすることがある。
+ * iOS で Apple ボタンを押したときだけ動的 import する。
+ */
 
 function showAppleAuthError(stageCode: string, message: string, detail?: string): void {
   const suffix = detail?.trim() ? `\n\n詳細: ${detail.trim()}` : '';
@@ -29,6 +34,15 @@ function isAppleUserCancelled(e: unknown): boolean {
 export async function signInWithAppleNative(): Promise<{ ok: true; session: Session } | { ok: false }> {
   if (Platform.OS !== 'ios') {
     showAppleAuthError('APPLE_PLATFORM', 'Sign in with Apple は iOS でのみ利用できます。');
+    return { ok: false };
+  }
+
+  type AppleAuthModule = typeof import('expo-apple-authentication');
+  let AppleAuthentication: AppleAuthModule;
+  try {
+    AppleAuthentication = await import('expo-apple-authentication');
+  } catch (e: unknown) {
+    showAppleAuthError('APPLE_MODULE', 'Sign in with Apple を読み込めませんでした。', formatUnknownError(e));
     return { ok: false };
   }
 
