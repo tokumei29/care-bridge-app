@@ -17,7 +17,7 @@ import { Text } from '@/components/Themed';
 import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
-import { startOAuthSignIn } from '@/features/auth/startOAuthSignIn';
+import { signInWithAppleNative } from '@/features/auth/signInWithApple';
 import { useCareRecipients } from '@/features/care-recipients';
 import { useExplicitStackBackHeader } from '@/features/care-records/useExplicitStackBackHeader';
 import { supabase } from '@/lib/supabase';
@@ -84,7 +84,7 @@ export function SignUpScreen() {
   const onOAuthPress = async (provider: 'apple') => {
     setOauthBusy(provider);
     try {
-      const result = await startOAuthSignIn(provider);
+      const result = await signInWithAppleNative();
       if (result.ok) {
         hydrateAuthSession(result.session);
         await new Promise<void>((resolve) => setTimeout(resolve, 500));
