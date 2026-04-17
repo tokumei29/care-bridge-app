@@ -17,6 +17,7 @@ import { Text } from '@/components/Themed';
 import { ContentRail } from '@/components/layout/ContentRail';
 import { ScreenBackdrop } from '@/components/layout/ScreenBackdrop';
 import { useColorScheme } from '@/components/useColorScheme';
+import { startOAuthSignIn } from '@/features/auth/startOAuthSignIn';
 import { useCareRecipients } from '@/features/care-recipients';
 import { useExplicitStackBackHeader } from '@/features/care-records/useExplicitStackBackHeader';
 import { supabase } from '@/lib/supabase';
@@ -41,6 +42,7 @@ export function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [oauthBusy, setOauthBusy] = useState<'apple' | null>(null);
 
   const onSubmit = async () => {
     const e = email.trim();
@@ -71,13 +73,29 @@ export function SignUpScreen() {
       }
       Alert.alert(
         '登録を受け付けました',
-        'メール確認が有効なプロジェクトでは、届いたメールのリンクを開いてからログインしてください。'
+        '届いたメールのリンクを開いてからログインしてください。'
       );
       router.replace('/auth/login');
     } finally {
       setSubmitting(false);
     }
   };
+
+  const onOAuthPress = async (provider: 'apple') => {
+    setOauthBusy(provider);
+    try {
+      const result = await startOAuthSignIn(provider);
+      if (result.ok) {
+        hydrateAuthSession(result.session);
+        await new Promise<void>((resolve) => setTimeout(resolve, 500));
+        router.replace('/');
+      }
+    } finally {
+      setOauthBusy(null);
+    }
+  };
+
+  const authLocked = submitting || oauthBusy !== null;
 
   return (
     <ScreenBackdrop>
@@ -90,82 +108,139 @@ export function SignUpScreen() {
           contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24, paddingTop: 12 }]}>
             <ContentRail layout={layout}>
               <Text style={[styles.lead, { color: c.textSecondary }]}>
-                Supabase Auth にユーザーが作成されます。本番ではメール確認や SSO の有無をダッシュボード側で調整してください。
+                推奨の登録方法です。Apple ID で続けると、初回はアカウントが自動で作成されます。
               </Text>
 
-              <Text style={[styles.label, { color: c.text }]}>メールアドレス</Text>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="you@example.com"
-                placeholderTextColor={c.textSecondary}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-                editable={!submitting}
-                style={[
-                  styles.input,
-                  { color: c.text, borderColor: c.borderStrong, backgroundColor: c.surfaceSolid },
-                ]}
-              />
+              {Platform.OS === 'ios' ? (
+                <Pressable
+                  onPress={() => void onOAuthPress('apple')}
+                  disabled={authLocked}
+                  style={({ pressed }) => [
+                    styles.ssoAppleBtn,
+                    {
+                      backgroundColor: scheme === 'dark' ? '#ffffff' : '#000000',
+                      opacity: authLocked ? 0.5 : pressed ? 0.92 : 1,
+                    },
+                  ]}>
+                  {oauthBusy === 'apple' ? (
+                    <ActivityIndicator color={scheme === 'dark' ? '#000000' : '#ffffff'} />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.ssoAppleBtnText,
+                        { color: scheme === 'dark' ? '#000000' : '#ffffff' },
+                      ]}>
+                      Apple で続ける
+                    </Text>
+                  )}
+                </Pressable>
+              ) : null}
 
-              <Text style={[styles.label, { color: c.text }]}>パスワード（6文字以上）</Text>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="パスワード"
-                placeholderTextColor={c.textSecondary}
-                secureTextEntry
-                multiline={false}
-                autoCapitalize="none"
-                autoCorrect={false}
-                spellCheck={false}
-                textContentType="newPassword"
-                autoComplete="password-new"
-                editable={!submitting}
-                style={[
-                  styles.input,
-                  { color: c.text, borderColor: c.borderStrong, backgroundColor: c.surfaceSolid },
-                ]}
-              />
-
-              <Text style={[styles.label, { color: c.text }]}>パスワード（確認）</Text>
-              <TextInput
-                value={passwordConfirm}
-                onChangeText={setPasswordConfirm}
-                placeholder="もう一度入力"
-                placeholderTextColor={c.textSecondary}
-                secureTextEntry
-                multiline={false}
-                autoCapitalize="none"
-                autoCorrect={false}
-                spellCheck={false}
-                textContentType="newPassword"
-                autoComplete="password-new"
-                editable={!submitting}
-                style={[
-                  styles.input,
-                  { color: c.text, borderColor: c.borderStrong, backgroundColor: c.surfaceSolid },
-                ]}
-              />
-
+              {/* Google SSO: Google Play 公開・Android 向けに再有効化する際は下をコメント解除。onOAuthPress / oauthBusy の型に google を戻す */}
+              {/*
               <Pressable
-                onPress={() => void onSubmit()}
-                disabled={submitting}
+                onPress={() => void onOAuthPress('google')}
+                disabled={authLocked}
                 style={({ pressed }) => [
-                  styles.primaryBtn,
+                  styles.ssoGoogleBtn,
                   {
-                    backgroundColor: c.accent,
-                    opacity: submitting ? 0.5 : pressed ? 0.9 : 1,
+                    borderColor: c.borderStrong,
+                    backgroundColor: c.surfaceSolid,
+                    opacity: authLocked ? 0.5 : pressed ? 0.92 : 1,
+                    marginTop: Platform.OS === 'ios' ? 12 : 0,
                   },
                 ]}>
-                {submitting ? (
-                  <ActivityIndicator color="#fff" />
+                {oauthBusy === 'google' ? (
+                  <ActivityIndicator color={c.accent} />
                 ) : (
-                  <Text style={styles.primaryBtnText}>登録する</Text>
+                  <Text style={[styles.ssoGoogleBtnText, { color: c.text }]}>Google で続ける</Text>
                 )}
               </Pressable>
+              */}
+
+              <View style={styles.altBlock}>
+                <View style={styles.dividerRow}>
+                  <View style={[styles.dividerLine, { backgroundColor: c.borderStrong }]} />
+                  <Text style={[styles.altHeading, { color: c.textSecondary }]}>
+                    またはメールアドレスで認証
+                  </Text>
+                  <View style={[styles.dividerLine, { backgroundColor: c.borderStrong }]} />
+                </View>
+
+                <Text style={[styles.label, { color: c.text }]}>メールアドレス</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  placeholderTextColor={c.textSecondary}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                  editable={!authLocked}
+                  style={[
+                    styles.input,
+                    { color: c.text, borderColor: c.borderStrong, backgroundColor: c.surfaceSolid },
+                  ]}
+                />
+
+                <Text style={[styles.label, { color: c.text }]}>パスワード（6文字以上）</Text>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="パスワード"
+                  placeholderTextColor={c.textSecondary}
+                  secureTextEntry
+                  multiline={false}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  spellCheck={false}
+                  textContentType="newPassword"
+                  autoComplete="password-new"
+                  editable={!authLocked}
+                  style={[
+                    styles.input,
+                    { color: c.text, borderColor: c.borderStrong, backgroundColor: c.surfaceSolid },
+                  ]}
+                />
+
+                <Text style={[styles.label, { color: c.text }]}>パスワード（確認）</Text>
+                <TextInput
+                  value={passwordConfirm}
+                  onChangeText={setPasswordConfirm}
+                  placeholder="もう一度入力"
+                  placeholderTextColor={c.textSecondary}
+                  secureTextEntry
+                  multiline={false}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  spellCheck={false}
+                  textContentType="newPassword"
+                  autoComplete="password-new"
+                  editable={!authLocked}
+                  style={[
+                    styles.input,
+                    { color: c.text, borderColor: c.borderStrong, backgroundColor: c.surfaceSolid },
+                  ]}
+                />
+
+                <Pressable
+                  onPress={() => void onSubmit()}
+                  disabled={authLocked}
+                  style={({ pressed }) => [
+                    styles.outlineBtn,
+                    {
+                      borderColor: c.accent,
+                      opacity: authLocked ? 0.5 : pressed ? 0.9 : 1,
+                    },
+                  ]}>
+                  {submitting ? (
+                    <ActivityIndicator color={c.accent} />
+                  ) : (
+                    <Text style={[styles.outlineBtnText, { color: c.accent }]}>メールで登録する</Text>
+                  )}
+                </Pressable>
+              </View>
 
               <View style={styles.footerRow}>
                 <Text style={[styles.footerText, { color: c.textSecondary }]}>既にアカウントがある方</Text>
@@ -193,7 +268,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     fontWeight: '600',
-    marginBottom: 22,
+    marginBottom: 20,
+  },
+  ssoAppleBtn: {
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+  },
+  ssoAppleBtnText: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  ssoGoogleBtn: {
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  ssoGoogleBtnText: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  altBlock: {
+    marginTop: 28,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  altHeading: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   label: {
     fontSize: 14,
@@ -208,16 +324,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 18,
   },
-  primaryBtn: {
+  outlineBtn: {
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 52,
     marginTop: 8,
+    borderWidth: 2,
+    backgroundColor: 'transparent',
   },
-  primaryBtnText: {
-    color: '#fff',
+  outlineBtnText: {
     fontSize: 17,
     fontWeight: '800',
   },

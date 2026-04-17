@@ -140,7 +140,7 @@ export function CareBridgeWelcomeModal({ visible, onDismiss, onPressLogin, onPre
                   </Pressable>
                 </View>
                 <Pressable onPress={onDismiss} hitSlop={12} style={styles.dismissHit}>
-                  <Text style={[styles.dismissText, { color: c.textSecondary }]}>あとで閉じる</Text>
+                  <Text style={[styles.dismissText, { color: c.textSecondary }]}>閉じる</Text>
                 </Pressable>
               </View>
             </View>

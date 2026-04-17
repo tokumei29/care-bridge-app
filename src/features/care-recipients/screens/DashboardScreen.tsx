@@ -149,7 +149,7 @@ export function DashboardScreen() {
               <View style={[styles.authBanner, { backgroundColor: c.accentMuted, borderColor: c.borderStrong }]}>
                 <Text style={[styles.authBannerTitle, { color: c.text }]}>ログインが必要です</Text>
                 <Text style={[styles.authBannerBody, { color: c.textSecondary }]}>
-                  メールアドレスとパスワードでサインインすると、サーバーに保存された被介護者一覧を表示・編集できます（テスト用。のちほど SSO 予定）。
+                  ログインすると、サーバーに保存された被介護者一覧を表示・編集できます。
                 </Text>
                 <View style={styles.authBannerActions}>
                   <Pressable

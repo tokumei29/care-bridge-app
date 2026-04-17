@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import { ContentRail } from '@/components/layout/ContentRail';
@@ -104,28 +104,32 @@ export default function SettingsTabScreen() {
 
   return (
     <ScreenBackdrop>
-      <ContentRail layout={layout}>
-        <View style={[styles.topPad, isTablet && styles.topPadTablet]}>
-          <LinearGradient
-            colors={[...heroShineGradient[themeKey].colors]}
-            start={heroShineGradient[themeKey].start}
-            end={heroShineGradient[themeKey].end}
-            style={[styles.card, { borderColor: c.borderStrong }]}>
-            <View style={[styles.iconWrap, { backgroundColor: c.accentMuted }]}>
-              <SymbolView
-                name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
-                tintColor={c.accent}
-                size={isTablet ? 36 : 30}
-              />
-            </View>
-            <Text style={[styles.title, { color: c.text, fontSize: isTablet ? 30 : 26 }]}>設定</Text>
-            <Text
-              style={[
-                styles.body,
-                { color: c.textSecondary, fontSize: isTablet ? 17 : 15, maxWidth: isTablet ? 560 : undefined },
-              ]}>
-              アカウント・通知・家族との共有などは、今後ここにまとめていきます。
-            </Text>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
+        <ContentRail layout={layout}>
+          <View style={[styles.topPad, isTablet && styles.topPadTablet]}>
+            <LinearGradient
+              colors={[...heroShineGradient[themeKey].colors]}
+              start={heroShineGradient[themeKey].start}
+              end={heroShineGradient[themeKey].end}
+              style={[styles.card, { borderColor: c.borderStrong }]}>
+              <View style={[styles.iconWrap, { backgroundColor: c.accentMuted }]}>
+                <SymbolView
+                  name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
+                  tintColor={c.accent}
+                  size={isTablet ? 36 : 30}
+                />
+              </View>
+              <Text style={[styles.title, { color: c.text, fontSize: isTablet ? 30 : 26 }]}>設定</Text>
+              <Text
+                style={[
+                  styles.body,
+                  { color: c.textSecondary, fontSize: isTablet ? 17 : 15, maxWidth: isTablet ? 560 : undefined },
+                ]}>
+                アカウント・通知・家族との共有などは、今後ここにまとめていきます。
+              </Text>
 
             <View style={[styles.legalBlock, { borderColor: c.borderStrong }]}>
               <Text style={[styles.accountLabel, { color: c.text }]}>法令・ポリシー</Text>
@@ -164,88 +168,92 @@ export default function SettingsTabScreen() {
               </Pressable>
             </View>
 
-            <View style={[styles.accountBlock, { borderColor: c.borderStrong }]}>
-              <Text style={[styles.accountLabel, { color: c.text }]}>アカウント</Text>
-              {!isReady ? (
-                <ActivityIndicator color={c.accent} style={styles.accountSpinner} />
-              ) : isSignedIn ? (
-                <>
-                  <Text style={[styles.accountStatus, { color: c.textSecondary }]}>
-                    サインイン済み（メール／パスワード）
-                  </Text>
-                  <Pressable
-                    onPress={onSignOut}
-                    disabled={signingOut || deletingAccount}
-                    style={({ pressed }) => [
-                      styles.signOutBtn,
-                      {
-                        borderColor: c.danger,
-                        opacity: signingOut || deletingAccount || pressed ? 0.75 : 1,
-                      },
-                    ]}>
-                    {signingOut ? (
-                      <ActivityIndicator color={c.danger} />
-                    ) : (
-                      <Text style={[styles.signOutText, { color: c.danger }]}>ログアウト</Text>
-                    )}
-                  </Pressable>
-                  <Text style={[styles.deleteAccountHint, { color: c.textSecondary }]}>
-                    アカウントを削除すると、紐づく介護データもサーバー上で消去されます（カスケード削除）。ログアウトより強い操作です。
-                  </Text>
-                  <Pressable
-                    onPress={onDeleteAccount}
-                    disabled={signingOut || deletingAccount}
-                    style={({ pressed }) => [
-                      styles.deleteAccountBtn,
-                      {
-                        borderColor: c.danger,
-                        backgroundColor: c.dangerMuted,
-                        opacity: signingOut || deletingAccount || pressed ? 0.75 : 1,
-                      },
-                    ]}>
-                    {deletingAccount ? (
-                      <ActivityIndicator color={c.danger} />
-                    ) : (
-                      <Text style={[styles.deleteAccountBtnText, { color: c.danger }]}>
-                        アカウントを削除
-                      </Text>
-                    )}
-                  </Pressable>
-                </>
-              ) : (
-                <>
-                  <Text style={[styles.accountStatus, { color: c.textSecondary }]}>
-                    未サインインです。ホームのバナーからログインするか、下のボタンを使ってください。
-                  </Text>
-                  <View style={styles.authRow}>
+              <View style={[styles.accountBlock, { borderColor: c.borderStrong }]}>
+                <Text style={[styles.accountLabel, { color: c.text }]}>アカウント</Text>
+                {!isReady ? (
+                  <ActivityIndicator color={c.accent} style={styles.accountSpinner} />
+                ) : isSignedIn ? (
+                  <>
+                    <Text style={[styles.accountStatus, { color: c.textSecondary }]}>
+                      サインイン済み
+                    </Text>
                     <Pressable
-                      onPress={() => router.push('/auth/login')}
+                      onPress={onSignOut}
+                      disabled={signingOut || deletingAccount}
                       style={({ pressed }) => [
-                        styles.signInBtn,
-                        { backgroundColor: c.accent, opacity: pressed ? 0.9 : 1 },
+                        styles.signOutBtn,
+                        {
+                          borderColor: c.danger,
+                          opacity: signingOut || deletingAccount || pressed ? 0.75 : 1,
+                        },
                       ]}>
-                      <Text style={styles.signInBtnText}>ログイン</Text>
+                      {signingOut ? (
+                        <ActivityIndicator color={c.danger} />
+                      ) : (
+                        <Text style={[styles.signOutText, { color: c.danger }]}>ログアウト</Text>
+                      )}
                     </Pressable>
+                    <Text style={[styles.deleteAccountHint, { color: c.textSecondary }]}>
+                      アカウントを削除すると、紐づく介護データもサーバー上で消去されます。
+                    </Text>
                     <Pressable
-                      onPress={() => router.push('/auth/sign-up')}
+                      onPress={onDeleteAccount}
+                      disabled={signingOut || deletingAccount}
                       style={({ pressed }) => [
-                        styles.signUpOutline,
-                        { borderColor: c.accent, opacity: pressed ? 0.85 : 1 },
+                        styles.deleteAccountBtn,
+                        {
+                          borderColor: c.danger,
+                          backgroundColor: c.dangerMuted,
+                          opacity: signingOut || deletingAccount || pressed ? 0.75 : 1,
+                        },
                       ]}>
-                      <Text style={[styles.signUpOutlineText, { color: c.accent }]}>新規登録</Text>
+                      {deletingAccount ? (
+                        <ActivityIndicator color={c.danger} />
+                      ) : (
+                        <Text style={[styles.deleteAccountBtnText, { color: c.danger }]}>
+                          アカウントを削除
+                        </Text>
+                      )}
                     </Pressable>
-                  </View>
-                </>
-              )}
-            </View>
-          </LinearGradient>
-        </View>
-      </ContentRail>
+                  </>
+                ) : (
+                  <>
+                    <Text style={[styles.accountStatus, { color: c.textSecondary }]}>
+                      未サインインです。ホームのバナーからログインするか、下のボタンを使ってください。
+                    </Text>
+                    <View style={styles.authRow}>
+                      <Pressable
+                        onPress={() => router.push('/auth/login')}
+                        style={({ pressed }) => [
+                          styles.signInBtn,
+                          { backgroundColor: c.accent, opacity: pressed ? 0.9 : 1 },
+                        ]}>
+                        <Text style={styles.signInBtnText}>ログイン</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => router.push('/auth/sign-up')}
+                        style={({ pressed }) => [
+                          styles.signUpOutline,
+                          { borderColor: c.accent, opacity: pressed ? 0.85 : 1 },
+                        ]}>
+                        <Text style={[styles.signUpOutlineText, { color: c.accent }]}>新規登録</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                )}
+              </View>
+            </LinearGradient>
+          </View>
+        </ContentRail>
+      </ScrollView>
     </ScreenBackdrop>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    flexGrow: 1,
+  },
   topPad: {
     paddingTop: 24,
     paddingBottom: 24,

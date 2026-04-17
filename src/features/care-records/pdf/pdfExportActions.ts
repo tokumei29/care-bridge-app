@@ -285,7 +285,7 @@ export async function composeEmailWithPdf(
     careRecordPdfDebugLog('composeEmailWithPdf: MailComposer not available');
     Alert.alert(
       'メールアプリを開けません',
-      'iOSシミュレータではメールが未設定のことが多いです。実機で試すか、共有シートからメールやLINEへ送ってください。',
+      '共有シートから送信してください。',
       [
         { text: '閉じる', style: 'cancel' },
         {
