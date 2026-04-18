@@ -92,7 +92,7 @@ export default function ContactScreen() {
     const previewName = name.trim().length > 0 ? name.trim() : '（未記入）';
     Alert.alert(
       '送信の確認',
-      `サーバーから運営あてにメールが送信されます。\n\nお名前: ${previewName}\n返信先: ${e}\n\nよろしいですか？`,
+      `運営あてにメールが送信されます。\n\nお名前: ${previewName}\n返信先: ${e}\n\nよろしいですか？`,
       [
         { text: 'キャンセル', style: 'cancel' },
         { text: '送信する', onPress: runSubmit },
