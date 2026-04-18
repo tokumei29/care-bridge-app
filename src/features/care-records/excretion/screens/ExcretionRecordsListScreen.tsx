@@ -302,7 +302,8 @@ export function ExcretionRecordsListScreen() {
                 <View style={styles.sectionTitleRow}>
                   <Text style={[styles.sectionTitle, { color: c.text }]}>表示する日付</Text>
                   <Pressable onPress={jumpToToday} style={styles.todayLink}>
-                    <Text style={[styles.todayLinkText, { color: c.accent }]}>今日</Text>
+                    <Text style={[styles.todayLinkText, { color: c.accent }]}>→今日を表示する
+                    </Text>
                   </Pressable>
                 </View>
                 <Text style={[styles.sectionSub, { color: c.textSecondary }]}>
