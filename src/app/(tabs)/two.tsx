@@ -168,6 +168,23 @@ export default function SettingsTabScreen() {
               </Pressable>
             </View>
 
+            <View style={[styles.legalBlock, { borderColor: c.borderStrong }]}>
+              <Text style={[styles.accountLabel, { color: c.text }]}>お問い合わせ</Text>
+              <Text style={[styles.legalSub, { color: c.textSecondary }]}>
+                ご質問・不具合のご連絡はフォームからお送りください。
+              </Text>
+              <Pressable
+                onPress={() => router.push('/settings/contact' as Href)}
+                style={({ pressed }) => [styles.legalRow, { opacity: pressed ? 0.75 : 1 }]}>
+                <Text style={[styles.legalRowLabel, { color: c.accent }]}>お問い合わせフォーム</Text>
+                <SymbolView
+                  name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                  tintColor={c.textSecondary}
+                  size={18}
+                />
+              </Pressable>
+            </View>
+
               <View style={[styles.accountBlock, { borderColor: c.borderStrong }]}>
                 <Text style={[styles.accountLabel, { color: c.text }]}>アカウント</Text>
                 {!isReady ? (
