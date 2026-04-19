@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   keyboardPhone: {
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
   },
   keyboardTablet: {
     justifyContent: 'center',
